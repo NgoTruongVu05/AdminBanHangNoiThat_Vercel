@@ -11,9 +11,8 @@ import { initPromotions } from "./promotionsController.js";
 import { initStaff } from "./staffController.js";
 import { initAccounts } from "./accountsController.js";
 import { initStyles } from "./stylesController.js";
-import { loadRemoteData } from "../models/remoteData.js";
 
-const state = { page: "dashboard", query: "", data: null };
+const state = { page: "dashboard", query: "" };
 const titles = {
   dashboard: "Báo cáo & Thống kê", products: "Quản lý thông tin sản phẩm nội thất",
   categories: "Danh mục loại sản phẩm nội thất", woods: "Danh mục loại gỗ & chất liệu",
@@ -57,21 +56,19 @@ function header() {
 
 async function render() {
   if (sessionStorage.getItem("woodcraft-authenticated") !== "true") return login();
-  if (!state.data) {
-    try {
-      state.data = await loadRemoteData();
-    } catch (error) {
-      document.querySelector("#app").innerHTML = `<main class="login-page"><section class="login-panel"><div class="eyebrow">DATABASE CONNECTION ERROR</div><h1>Không thể tải dữ liệu</h1><p>${error.message}</p><button class="btn" id="retry-data">Thử lại</button></section></main>`;
-      document.querySelector("#retry-data").onclick = () => render();
-      return;
-    }
-  }
   const viewName = views[state.page];
   const response = await fetch(`views/${viewName}.html`);
   if (!response.ok) throw new Error(`Không thể tải view ${viewName}`);
   const view = await response.text();
   document.querySelector("#app").innerHTML = `<div class="app">${sidebar()}<main class="main">${header()}<div class="content"><div class="page-title"><div><div class="eyebrow">WOODCRAFT /</div><h1>${titles[state.page]}</h1></div></div>${view}</div></main></div>`;
-  controllers[state.page]?.(state.query, query => { state.query = query; render(); }, state.data);
+  try {
+    await controllers[state.page]?.(state.query, query => { state.query = query; render(); });
+  } catch (error) {
+    console.error(`Không thể tải dữ liệu trang ${state.page}:`, error);
+    document.querySelector(".content").innerHTML = `<main class="login-page"><section class="login-panel"><div class="eyebrow">DATABASE CONNECTION ERROR</div><h1>Không thể tải dữ liệu</h1><p>${error.message}</p><button class="btn" id="retry-data">Thử lại</button></section></main>`;
+    document.querySelector("#retry-data").onclick = () => render();
+    return;
+  }
   document.querySelectorAll("[data-page]").forEach(item => item.onclick = () => { state.page = item.dataset.page; state.query = ""; render(); });
   document.querySelector(".logout").onclick = () => { sessionStorage.removeItem("woodcraft-authenticated"); render(); };
   document.querySelector("#add-btn")?.addEventListener("click", () => alert("Form này sẽ được kết nối model và API ở bước backend."));

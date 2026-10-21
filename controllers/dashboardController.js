@@ -1,4 +1,10 @@
-export function initDashboard(query, rerender, data) {
+import { getDashboardData } from "../models/dashboardModel.js";
+
+let dataPromise;
+
+export async function initDashboard(query, rerender) {
+  dataPromise ??= getDashboardData();
+  const data = await dataPromise;
   const products = data.products;
   const woods = data.woods;
   const orders = data.orders;

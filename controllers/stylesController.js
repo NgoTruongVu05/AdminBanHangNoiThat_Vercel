@@ -1,2 +1,3 @@
 import { initRemoteTable } from "./remoteTableController.js";
-export function initStyles(query, rerender, data) { initRemoteTable("styles", query, rerender, data); }
+import { getStyles } from "../models/stylesModel.js";
+export function initStyles(query, rerender) { return initRemoteTable("styles", query, rerender, getStyles); }

@@ -1,7 +1,11 @@
 import { bindSearch, money } from "./shared.js";
+import { getProducts } from "../models/productsModel.js";
 
-export function initProducts(query, rerender, data) {
-  const products = data.products;
+let dataPromise;
+
+export async function initProducts(query, rerender) {
+  dataPromise ??= getProducts();
+  const products = await dataPromise;
   const rows = products.filter(product => `${product.id} ${product.name} ${product.wood}`.toLowerCase().includes(query.toLowerCase()));
   document.querySelector("#products-body").innerHTML = rows.map(product => `
     <tr>

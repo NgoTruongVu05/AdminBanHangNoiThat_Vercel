@@ -1,2 +1,3 @@
 import { initRemoteTable } from "./remoteTableController.js";
-export function initSuppliers(query, rerender, data) { initRemoteTable("suppliers", query, rerender, data); }
+import { getSuppliers } from "../models/suppliersModel.js";
+export function initSuppliers(query, rerender) { return initRemoteTable("suppliers", query, rerender, getSuppliers); }

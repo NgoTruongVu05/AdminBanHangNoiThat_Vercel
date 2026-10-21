@@ -38,7 +38,15 @@ module.exports = async function handler(request, response) {
 
   try {
     const baseUrl = url.replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
-    const result = await Promise.all(tables.map(async ([table, keyName]) => {
+    const requestedTables = request.query?.tables ||
+      new URL(request.url || "", "http://localhost").searchParams.get("tables");
+    const selectedTables = requestedTables
+      ? tables.filter(([, keyName]) => requestedTables.split(",").map(name => name.trim().toUpperCase()).includes(keyName))
+      : tables;
+    if (requestedTables && !selectedTables.length) {
+      return response.status(400).json({ error: "Danh sách bảng không hợp lệ." });
+    }
+    const result = await Promise.all(selectedTables.map(async ([table, keyName]) => {
       const endpoint = table.includes("?") ? table : `${table}?select=*`;
       const tableResponse = await fetch(`${baseUrl}/rest/v1/${endpoint}`, {
         headers: { apikey: key, Authorization: `Bearer ${key}` }
