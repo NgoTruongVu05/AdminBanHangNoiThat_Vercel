@@ -11,7 +11,6 @@ import { initPromotions } from "./promotionsController.js";
 import { initStaff } from "./staffController.js";
 import { initAccounts } from "./accountsController.js";
 import { initStyles } from "./stylesController.js";
-import { toolbar } from "./shared.js";
 
 const state = { page: "dashboard", query: "" };
 const titles = {
@@ -51,24 +50,13 @@ function header() {
   return `<header class="topbar"><div class="crumb"><span>WOODCRAFT</span>${titles[state.page]}</div><div class="top-actions"><span>◷ 2026 ACTIVE</span><div class="profile"><div class="avatar">AD</div><div><b>Nguyễn Văn Hùng (Quản trị)</b><small>ADMIN</small></div></div><button class="logout">⇥ Đăng xuất</button></div></header>`;
 }
 
-function toolbarFor(page) {
-  const options = {
-    products: ["Tìm theo mã hoặc tên sản phẩm...", "Thêm sản phẩm", "<select><option>Tất cả loại SP</option></select>"],
-    categories: ["Tìm theo mã hoặc tên loại sản phẩm...", "Thêm loại sản phẩm", ""],
-    woods: ["Tìm theo mã hoặc tên loại gỗ...", "Thêm loại gỗ", ""],
-    orders: ["Tìm theo mã hóa đơn, tên khách hàng hoặc CCCD...", "Tạo hóa đơn bán hàng", "<select><option>Tất cả trạng thái</option></select>"]
-  };
-  const config = options[page] || ["Tìm kiếm dữ liệu...", "Thêm mới", ""];
-  return toolbar(...config);
-}
-
 async function render() {
   if (sessionStorage.getItem("woodcraft-authenticated") !== "true") return login();
   const viewName = views[state.page];
   const response = await fetch(`views/${viewName}.html`);
   if (!response.ok) throw new Error(`Không thể tải view ${viewName}`);
   const view = await response.text();
-  document.querySelector("#app").innerHTML = `<div class="app">${sidebar()}<main class="main">${header()}<div class="content"><div class="page-title"><div><div class="eyebrow">WOODCRAFT /</div><h1>${titles[state.page]}</h1></div></div>${state.page === "dashboard" ? "" : toolbarFor(state.page)}${view}</div></main></div>`;
+  document.querySelector("#app").innerHTML = `<div class="app">${sidebar()}<main class="main">${header()}<div class="content"><div class="page-title"><div><div class="eyebrow">WOODCRAFT /</div><h1>${titles[state.page]}</h1></div></div>${view}</div></main></div>`;
   controllers[state.page]?.(state.query, query => { state.query = query; render(); });
   document.querySelectorAll("[data-page]").forEach(item => item.onclick = () => { state.page = item.dataset.page; state.query = ""; render(); });
   document.querySelector(".logout").onclick = () => { sessionStorage.removeItem("woodcraft-authenticated"); render(); };
