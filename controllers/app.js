@@ -19,6 +19,7 @@ import { getPromotions } from "../models/promotionsModel.js";
 import { getStaff } from "../models/staffModel.js";
 import { getAccounts } from "../models/accountsModel.js";
 import { getStyles } from "../models/stylesModel.js";
+import { materialIcon } from "./shared.js";
 
 const state = { page: "dashboard", query: "" };
 const titles = {
@@ -64,11 +65,11 @@ function login() {
 }
 
 function sidebar() {
-  return `<aside class="sidebar"><div class="brand"><div class="brand-mark">WC</div><div><strong>WOODCRAFT ADMIN</strong><small>ERP RELATIONAL PORTAL</small></div></div><nav class="nav">${getMenu().map(group => `<div class="nav-section">${group.section}</div>${group.items.map(([id, icon, text, badge]) => `<div class="nav-item ${state.page === id ? "active" : ""}" data-page="${id}"><span class="nav-icon">${icon}</span><span>${text}</span>${badge ? `<span class="nav-badge">${badge}</span>` : ""}</div>`).join("")}`).join("")}</nav></aside>`;
+  return `<aside class="sidebar"><div class="brand"><div class="brand-mark">WC</div><div><strong>WOODCRAFT ADMIN</strong></div></div><nav class="nav">${getMenu().map(group => `<div class="nav-section">${group.section}</div>${group.items.map(([id, icon, text, badge]) => `<div class="nav-item ${state.page === id ? "active" : ""}" data-page="${id}"><span class="nav-icon">${materialIcon(icon)}</span><span>${text}</span>${badge ? `<span class="nav-badge">${badge}</span>` : ""}</div>`).join("")}`).join("")}</nav></aside>`;
 }
 
 function header() {
-  return `<header class="topbar"><div class="crumb"><span>WOODCRAFT</span>${titles[state.page]}</div><div class="top-actions"><div class="profile"><div class="avatar">AD</div><div><b>Nguyễn Văn Hùng (Quản trị)</b><small>ADMIN</small></div></div><button class="logout">⇥ Đăng xuất</button></div></header>`;
+  return `<header class="topbar"><div class="crumb"><span>WOODCRAFT</span>${titles[state.page]}</div><div class="top-actions"><div class="profile"><div class="avatar">AD</div><div><b>Nguyễn Văn Hùng</b><small>ADMIN</small></div></div><button class="logout">${materialIcon("logout")}<span>Đăng xuất</span></button></div></header>`;
 }
 
 async function render() {

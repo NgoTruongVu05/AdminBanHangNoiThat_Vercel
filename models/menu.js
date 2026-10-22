@@ -1,34 +1,34 @@
 const menu = [
-  { section: "TỔNG QUAN", items: [["dashboard", "📊", "Báo cáo & Thống kê"]] },
+  { section: "TỔNG QUAN", items: [["dashboard", "dashboard", "Báo cáo & Thống kê"]] },
   {
     section: "QUẢN LÝ SẢN PHẨM & DANH MỤC",
     items: [
-      ["products", "🪑", "Sản phẩm nội thất"],
-      ["categories", "🗂️", "Loại sản phẩm"],
-      ["woods", "🌲", "Loại gỗ (Chất liệu)"],
-      ["styles", "✨", "Kiểu dáng nội thất"]
+      ["products", "chair", "Sản phẩm nội thất"],
+      ["categories", "category", "Loại sản phẩm"],
+      ["woods", "forest", "Loại gỗ (Chất liệu)"],
+      ["styles", "auto_awesome", "Kiểu dáng nội thất"]
     ]
   },
   {
     section: "KHO & ĐỐI TÁC",
     items: [
-      ["imports", "📦", "Nhập kho nội thất"],
-      ["suppliers", "🏭", "Nhà cung cấp"]
+      ["imports", "inventory_2", "Nhập kho nội thất"],
+      ["suppliers", "factory", "Nhà cung cấp"]
     ]
   },
   {
     section: "BÁN HÀNG & KHÁCH HÀNG",
     items: [
-      ["orders", "🧾", "Hóa đơn bán hàng"],
-      ["customers", "👥", "Hồ sơ khách hàng"],
-      ["promotions", "🎉", "Chương trình khuyến mãi"]
+      ["orders", "receipt_long", "Hóa đơn bán hàng"],
+      ["customers", "groups", "Hồ sơ khách hàng"],
+      ["promotions", "campaign", "Chương trình khuyến mãi"]
     ]
   },
   {
     section: "HỆ THỐNG & NHÂN SỰ",
     items: [
-      ["staff", "👤", "Quản lý nhân viên"],
-      ["accounts", "🔐", "Quản lý tài khoản"]
+      ["staff", "person", "Quản lý nhân viên"],
+      ["accounts", "admin_panel_settings", "Quản lý tài khoản"]
     ]
   }
 ];

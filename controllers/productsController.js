@@ -1,4 +1,4 @@
-import { bindSearch, money } from "./shared.js";
+import { bindSearch, money, rowActions } from "./shared.js";
 import { getProducts } from "../models/productsModel.js";
 
 let dataPromise;
@@ -15,7 +15,7 @@ export async function initProducts(query, rerender) {
       <td class="money">${money(product.price)}</td>
       <td class="${product.stock <= 3 ? "tag warn" : ""}">${product.stock}</td>
       <td><span class="tag ${product.status.includes("Tạm") ? "warn" : ""}">${product.status}</span></td>
-      <td class="actions"><button>♢</button><button data-delete="${product.id}">♧</button></td>
+      <td class="actions">${rowActions(true, `data-delete="${product.id}"`)}</td>
     </tr>`).join("");
   document.querySelector("#products-count").textContent = `${rows.length} / ${products.length}`;
   bindSearch(rerender, query);
