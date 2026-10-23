@@ -21,6 +21,7 @@ import { getStaff } from "../models/staffModel.js";
 import { getAccounts } from "../models/accountsModel.js";
 import { getStyles } from "../models/stylesModel.js";
 import { materialIcon, showAlertModal } from "./shared.js";
+import { getAuthenticatedAccount, logout, renderLogin } from "./authController.js";
 
 const restoredState = sessionStorage.getItem("woodcraft-page-state");
 const state = restoredState ? JSON.parse(restoredState) : { page: "dashboard", query: "" };
@@ -41,6 +42,7 @@ const refreshAfterAdd = () => {
   return render();
 };
 const preloaders = [getCategories, getImports, getSuppliers, getCustomers, getPromotions, getStaff, getAccounts, getStyles];
+const restrictedPages = new Set(["promotions", "staff", "accounts"]);
 
 function preloadData() {
   Promise.allSettled(preloaders.map(load => load())).then(results => {
@@ -50,41 +52,23 @@ function preloadData() {
   });
 }
 
-function login() {
-  document.querySelector("#app").innerHTML = `<main class="login-page"><section class="login-panel"><div class="login-brand"><div class="brand-mark">WC</div><div><strong>WOODCRAFT ADMIN</strong><small>ERP RELATIONAL PORTAL</small></div></div><div class="login-copy"><div class="eyebrow">SECURE ACCESS / 2026</div><h1>Chào mừng trở lại</h1><p>Đăng nhập để quản lý hệ thống bán hàng nội thất Woodcraft.</p></div><form class="login-form"><label>TÊN ĐĂNG NHẬP<input name="username" placeholder="Nhập tên đăng nhập" required></label><label>MẬT KHẨU<input name="password" type="password" placeholder="Nhập mật khẩu" required></label><div class="login-options"><label class="remember"><input type="checkbox" checked> Ghi nhớ đăng nhập</label><a href="#" id="forgot-password">Quên mật khẩu?</a></div><button class="btn login-btn">Đăng nhập hệ thống <span>→</span></button><p class="login-hint">Tài khoản demo: <b>admin.woodcraft</b> / <b>123456</b></p></form><footer>WOODCRAFT ERP · GIAO DIỆN DEMO, CHƯA KẾT NỐI CƠ SỞ DỮ LIỆU</footer></section><aside class="login-art"><div class="art-content"><span class="tag">INTERIOR MANAGEMENT</span><h2>Quản trị tinh hoa<br><em>từ bên trong.</em></h2><p>Không gian quản lý được thiết kế cho những sản phẩm nội thất có giá trị.</p></div></aside></main>`;
-  document.querySelector(".login-form").onsubmit = event => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    if (form.get("username") === "admin.woodcraft" && form.get("password") === "123456") {
-      sessionStorage.setItem("woodcraft-authenticated", "true");
-      render().catch(error => {
-        console.error("Ứng dụng không thể khởi tạo:", error);
-        document.querySelector("#app").innerHTML = `<main class="login-page"><section class="login-panel"><div class="eyebrow">APPLICATION ERROR</div><h1>Không thể khởi tạo ứng dụng</h1><p>${error.message}</p><button class="btn" id="reload-app">Tải lại trang</button></section></main>`;
-        document.querySelector("#reload-app").onclick = () => window.location.reload();
-      });
-      return;
-    }
-    const error = document.createElement("p");
-    error.className = "login-error";
-    error.textContent = "Tên đăng nhập hoặc mật khẩu chưa đúng.";
-    event.currentTarget.querySelector(".login-btn").before(error);
-  };
-  document.querySelector("#forgot-password").onclick = event => {
-    event.preventDefault();
-    showAlertModal("Chức năng khôi phục mật khẩu sẽ được kết nối sau khi có backend.", "info");
-  };
-}
-
 function sidebar() {
-  return `<aside class="sidebar"><div class="brand"><div class="brand-mark">WC</div><div><strong>WOODCRAFT ADMIN</strong></div></div><nav class="nav">${getMenu().map(group => `<div class="nav-section">${group.section}</div>${group.items.map(([id, icon, text, badge]) => `<div class="nav-item ${state.page === id ? "active" : ""}" data-page="${id}"><span class="nav-icon">${materialIcon(icon)}</span><span>${text}</span>${badge ? `<span class="nav-badge">${badge}</span>` : ""}</div>`).join("")}`).join("")}</nav></aside>`;
+  const account = getAuthenticatedAccount();
+  return `<aside class="sidebar"><div class="brand"><div class="brand-mark">WC</div><div><strong>WOODCRAFT ADMIN</strong></div></div><nav class="nav">${getMenu(account?.role === "QUANTRIVIEN").map(group => `<div class="nav-section">${group.section}</div>${group.items.map(([id, icon, text, badge]) => `<div class="nav-item ${state.page === id ? "active" : ""}" data-page="${id}"><span class="nav-icon">${materialIcon(icon)}</span><span>${text}</span>${badge ? `<span class="nav-badge">${badge}</span>` : ""}</div>`).join("")}`).join("")}</nav></aside>`;
 }
 
 function header() {
-  return `<header class="topbar"><div class="crumb"><span>WOODCRAFT</span>${titles[state.page]}</div><div class="top-actions"><div class="profile"><div class="avatar">AD</div><div><b>Nguyễn Văn Hùng</b><small>ADMIN</small></div></div><button class="logout">${materialIcon("logout")}<span>Đăng xuất</span></button></div></header>`;
+  const account = getAuthenticatedAccount();
+  return `<header class="topbar"><div class="crumb"><span>WOODCRAFT</span>${titles[state.page]}</div><div class="top-actions"><div class="profile"><div class="avatar">AD</div><div><b>${account?.username || "Quản trị viên"}</b><small>${account?.role || "ADMIN"}</small></div></div><button class="logout">${materialIcon("logout")}<span>Đăng xuất</span></button></div></header>`;
 }
 
 async function render() {
-  if (sessionStorage.getItem("woodcraft-authenticated") !== "true") return login();
+  if (!getAuthenticatedAccount()) return renderLogin(render);
+  const account = getAuthenticatedAccount();
+  if (account.role !== "QUANTRIVIEN" && restrictedPages.has(state.page)) {
+    state.page = "dashboard";
+    state.query = "";
+  }
   const viewName = views[state.page];
   const response = await fetch(`views/${viewName}.html`);
   if (!response.ok) throw new Error(`Không thể tải view ${viewName}`);
@@ -94,12 +78,12 @@ async function render() {
     await controllers[state.page]?.(state.query, query => { state.query = query; render(); });
   } catch (error) {
     console.error(`Không thể tải dữ liệu trang ${state.page}:`, error);
-    document.querySelector(".content").innerHTML = `<main class="login-page"><section class="login-panel"><div class="eyebrow">DATABASE CONNECTION ERROR</div><h1>Không thể tải dữ liệu</h1><p>${error.message}</p><button class="btn" id="retry-data">Thử lại</button></section></main>`;
+    document.querySelector(".content").innerHTML = `<main class="login-page"><section class="login-card"><div class="eyebrow">DATABASE CONNECTION ERROR</div><h1>Không thể tải dữ liệu</h1><p>${error.message}</p><button class="btn" id="retry-data">Thử lại</button></section></main>`;
     document.querySelector("#retry-data").onclick = () => render();
     return;
   }
   document.querySelectorAll("[data-page]").forEach(item => item.onclick = () => { state.page = item.dataset.page; state.query = ""; render(); });
-  document.querySelector(".logout").onclick = () => { sessionStorage.removeItem("woodcraft-authenticated"); render(); };
+  document.querySelector(".logout").onclick = () => { logout(); render(); };
   const addAction = addActions[state.page];
   document.querySelector("#add-btn")?.addEventListener("click", () => {
     Promise.resolve(addAction?.()).catch(error => {

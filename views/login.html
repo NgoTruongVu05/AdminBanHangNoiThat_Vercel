@@ -1,0 +1,26 @@
+<main class="login-page">
+  <section class="login-card" aria-labelledby="login-title">
+    <div class="login-heading">
+      <h1 id="login-title">Đăng nhập</h1>
+      <p>Quản trị hệ thống</p>
+    </div>
+    <form class="login-form" novalidate>
+      <label>
+        <span>TÊN ĐĂNG NHẬP</span>
+        <div class="login-input">
+          <span class="material-symbols-outlined" aria-hidden="true">person</span>
+          <input name="username" type="text" autocomplete="username" placeholder="admin123" required>
+        </div>
+      </label>
+      <label>
+        <span>MẬT KHẨU</span>
+        <div class="login-input">
+          <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+          <input name="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+        </div>
+      </label>
+      <p class="login-error" role="alert" hidden></p>
+      <button class="login-btn" type="submit">Đăng nhập</button>
+    </form>
+  </section>
+</main>

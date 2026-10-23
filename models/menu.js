@@ -33,4 +33,9 @@ const menu = [
   }
 ];
 
-export const getMenu = () => menu;
+export const getMenu = isAdmin => isAdmin
+  ? menu
+  : menu.map(group => ({
+    ...group,
+    items: group.items.filter(([id]) => !["promotions", "staff", "accounts"].includes(id))
+  })).filter(group => group.items.length);

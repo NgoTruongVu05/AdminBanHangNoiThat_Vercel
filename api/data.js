@@ -5,7 +5,7 @@ const tables = [
   ["nhacungcap", "NHACUNGCAP"], ["loaisp", "LOAISP"], ["loaigo", "LOAIGO"], ["kieudang", "KIEUDANG"],
   ["chuongtrinhkhuyenmai", "CHUONGTRINHKHUYENMAI"], ["nhanvien", "NHANVIEN"], ["khachhang", "KHACHHANG"],
   ["sanpham", "SANPHAM"], ["phieunhap", "PHIEUNHAP"], ["hoadon", "HOADON"],
-  ["dangnhap?select=tendangnhap,loaitaikhoan,id_khachhang,cccd_nhanvien,trangthai", "DANGNHAP"]
+  ["dangnhap?select=tendangnhap,matkhau,loaitaikhoan,id_khachhang,cccd_nhanvien,trangthai", "DANGNHAP"]
 ];
 
 function getEnvironmentValue(name) {
@@ -71,6 +71,8 @@ module.exports = async function handler(request, response) {
     const baseUrl = url.replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
     const requestedTables = request.query?.tables ||
       new URL(request.url || "", "http://localhost").searchParams.get("tables");
+    const accountType = request.query?.accountType ||
+      new URL(request.url || "", "http://localhost").searchParams.get("accountType");
     const selectedTables = requestedTables
       ? tables.filter(([, keyName]) => requestedTables.split(",").map(name => name.trim().toUpperCase()).includes(keyName))
       : tables;
@@ -78,7 +80,10 @@ module.exports = async function handler(request, response) {
       return response.status(400).json({ error: "Danh sách bảng không hợp lệ." });
     }
     const result = await Promise.all(selectedTables.map(async ([table, keyName]) => {
-      const endpoint = table.includes("?") ? table : `${table}?select=*`;
+      let endpoint = table.includes("?") ? table : `${table}?select=*`;
+      if (keyName === "DANGNHAP" && accountType) {
+        endpoint += `&loaitaikhoan=eq.${encodeURIComponent(accountType)}`;
+      }
       const tableResponse = await fetch(`${baseUrl}/rest/v1/${endpoint}`, {
         headers: { apikey: key, Authorization: `Bearer ${key}` }
       });

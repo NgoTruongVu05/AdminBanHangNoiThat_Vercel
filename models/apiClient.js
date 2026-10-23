@@ -1,6 +1,7 @@
-export async function fetchTables(tableNames) {
+export async function fetchTables(tableNames, options = {}) {
   const query = encodeURIComponent(tableNames.join(","));
-  const response = await fetch(`/api/data?tables=${query}`);
+  const accountType = options.accountType ? `&accountType=${encodeURIComponent(options.accountType)}` : "";
+  const response = await fetch(`/api/data?tables=${query}${accountType}`);
   if (!response.ok) throw new Error(`API trả về ${response.status}`);
 
   const payload = await response.json();
