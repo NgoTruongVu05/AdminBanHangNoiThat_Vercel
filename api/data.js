@@ -5,7 +5,7 @@ const tables = [
   ["nhacungcap", "NHACUNGCAP"], ["loaisp", "LOAISP"], ["loaigo", "LOAIGO"], ["kieudang", "KIEUDANG"],
   ["chuongtrinhkhuyenmai", "CHUONGTRINHKHUYENMAI"], ["nhanvien", "NHANVIEN"], ["khachhang", "KHACHHANG"],
   ["sanpham", "SANPHAM"], ["phieunhap", "PHIEUNHAP"], ["hoadon", "HOADON"],
-  ["dangnhap?select=id_taikhoan,tendangnhap,loaitaikhoan,cccd_nhanvien,trangthai", "DANGNHAP"]
+  ["dangnhap?select=tendangnhap,loaitaikhoan,id_khachhang,cccd_nhanvien,trangthai", "DANGNHAP"]
 ];
 
 function getEnvironmentValue(name) {
@@ -25,8 +25,8 @@ function getEnvironmentValue(name) {
 }
 
 module.exports = async function handler(request, response) {
-  if (request.method !== "GET") {
-    response.setHeader("Allow", "GET");
+  if (!["GET", "POST"].includes(request.method)) {
+    response.setHeader("Allow", "GET, POST");
     return response.status(405).json({ error: "Method Not Allowed" });
   }
 
@@ -34,6 +34,37 @@ module.exports = async function handler(request, response) {
   const key = getEnvironmentValue("SUPABASE_ANON_KEY");
   if (!url || !key) {
     return response.status(500).json({ error: "Thiếu SUPABASE_URL hoặc SUPABASE_ANON_KEY trên Vercel." });
+  }
+
+  if (request.method === "POST") {
+    const table = String(request.body?.table || "").toLowerCase();
+    const record = request.body?.record;
+    const tableEntry = tables.find(([name]) => name.split("?")[0] === table);
+    if (!tableEntry || !record || typeof record !== "object" || Array.isArray(record)) {
+      return response.status(400).json({ error: "Bảng hoặc dữ liệu thêm vào không hợp lệ." });
+    }
+    try {
+      const baseUrl = url.replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
+      const tableResponse = await fetch(`${baseUrl}/rest/v1/${tableEntry[0].split("?")[0]}`, {
+        method: "POST",
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify(record)
+      });
+      if (!tableResponse.ok) {
+        const detail = await tableResponse.text();
+        console.error("Supabase insert failed:", { table, status: tableResponse.status, detail });
+        return response.status(tableResponse.status).json({ error: "Không thể thêm dữ liệu vào cơ sở dữ liệu.", detail });
+      }
+      return response.status(201).json({ data: await tableResponse.json() });
+    } catch (error) {
+      console.error("Supabase insert request failed:", error);
+      return response.status(502).json({ error: "Không thể ghi dữ liệu vào Supabase." });
+    }
   }
 
   try {

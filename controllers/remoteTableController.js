@@ -6,6 +6,10 @@ const escape = value => String(value ?? "").replace(/[&<>"']/g, character => ({
 
 const dataPromises = {};
 
+export function clearRemoteTableCache() {
+  Object.keys(dataPromises).forEach(type => delete dataPromises[type]);
+}
+
 export async function initRemoteTable(type, query, rerender, loadData) {
   dataPromises[type] ??= loadData();
   const data = await dataPromises[type];
@@ -15,7 +19,7 @@ export async function initRemoteTable(type, query, rerender, loadData) {
     imports: { rows: data.imports, body: "imports-body", search: row => `${row.id} ${row.date} ${row.supplier}`, render: row => `<tr><td class="code">${escape(row.id)}</td><td class="mono">${escape(row.date)}</td><td>${escape(row.supplier)}</td><td><span class="tag">${row.count} dòng SP</span></td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>` },
     promotions: { rows: data.promotions, body: "promotions-body", search: row => `${row.id} ${row.name}`, render: row => `<tr><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td><span class="tag">${escape(row.type)}</span></td><td class="mono">${escape(row.period)}</td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>` },
     staff: { rows: data.staff, body: "staff-body", search: row => `${row.id} ${row.name} ${row.role}`, render: row => `<tr><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td><span class="tag blue">${escape(row.role)}</span></td><td class="mono">${escape(row.phone)}</td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>` },
-    accounts: { rows: data.accounts, body: "accounts-body", search: row => `${row.id} ${row.username} ${row.name}`, render: row => `<tr><td class="code">${escape(row.id)}</td><td><b>${escape(row.username)}</b></td><td>${escape(row.name)}</td><td><span class="tag">${escape(row.role)}</span></td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>` },
+    accounts: { rows: data.accounts, body: "accounts-body", search: row => `${row.username} ${row.name} ${row.email}`, render: row => `<tr><td><b>${escape(row.username)}</b></td><td>${escape(row.name)}<div class="sub">${escape(row.email)}</div></td><td><span class="tag">${escape(row.role)}</span></td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>` },
     styles: { rows: data.styles, body: "styles-body", search: row => `${row.id} ${row.name} ${row.category}`, render: row => `<tr><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td>${escape(row.category)}</td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>` }
   }[type];
   if (!config) return;

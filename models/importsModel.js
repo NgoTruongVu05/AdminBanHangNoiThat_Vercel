@@ -1,5 +1,11 @@
-import { fetchTables } from "./apiClient.js";
-import { cached, date, field } from "./modelUtils.js";
+import { fetchTables, insertRecord } from "./apiClient.js";
+import { cached, date, field, invalidate } from "./modelUtils.js";
+
+export async function createImport(record) {
+  const result = await insertRecord("PHIEUNHAP", record);
+  invalidate("imports");
+  return result;
+}
 
 export async function getImports() {
   return cached("imports", async () => {

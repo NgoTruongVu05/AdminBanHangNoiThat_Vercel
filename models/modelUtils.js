@@ -14,3 +14,5 @@ export function cached(key, load) {
   }
   return cache.get(key);
 }
+
+export const invalidate = key => cache.delete(key);

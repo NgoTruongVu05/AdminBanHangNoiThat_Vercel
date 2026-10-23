@@ -1,16 +1,17 @@
 import { getMenu } from "../models/menu.js";
 import { initDashboard } from "./dashboardController.js";
-import { initProducts } from "./productsController.js";
-import { initCategories } from "./categoriesController.js";
-import { initWoods } from "./woodsController.js";
+import { initProducts, openAddProduct } from "./productsController.js";
+import { initCategories, openAddCategory } from "./categoriesController.js";
+import { initWoods, openAddWood } from "./woodsController.js";
 import { initOrders } from "./ordersController.js";
-import { initImports } from "./importsController.js";
-import { initSuppliers } from "./suppliersController.js";
-import { initCustomers } from "./customersController.js";
+import { initImports, openAddImport } from "./importsController.js";
+import { initSuppliers, openAddSupplier } from "./suppliersController.js";
+import { initCustomers, openAddCustomer } from "./customersController.js";
 import { initPromotions } from "./promotionsController.js";
-import { initStaff } from "./staffController.js";
+import { initStaff, openAddStaff } from "./staffController.js";
 import { initAccounts } from "./accountsController.js";
-import { initStyles } from "./stylesController.js";
+import { initStyles, openAddStyle } from "./stylesController.js";
+import { clearRemoteTableCache } from "./remoteTableController.js";
 import { getCategories } from "../models/categoriesModel.js";
 import { getImports } from "../models/importsModel.js";
 import { getSuppliers } from "../models/suppliersModel.js";
@@ -19,9 +20,11 @@ import { getPromotions } from "../models/promotionsModel.js";
 import { getStaff } from "../models/staffModel.js";
 import { getAccounts } from "../models/accountsModel.js";
 import { getStyles } from "../models/stylesModel.js";
-import { materialIcon } from "./shared.js";
+import { materialIcon, showAlertModal } from "./shared.js";
 
-const state = { page: "dashboard", query: "" };
+const restoredState = sessionStorage.getItem("woodcraft-page-state");
+const state = restoredState ? JSON.parse(restoredState) : { page: "dashboard", query: "" };
+sessionStorage.removeItem("woodcraft-page-state");
 const titles = {
   dashboard: "Báo cáo & Thống kê", products: "Quản lý thông tin sản phẩm nội thất",
   categories: "Danh mục loại sản phẩm nội thất", woods: "Danh mục loại gỗ & chất liệu",
@@ -32,6 +35,11 @@ const titles = {
 };
 const views = { dashboard: "dashboard", products: "products", categories: "categories", woods: "woods", styles: "styles", imports: "imports", suppliers: "suppliers", orders: "orders", customers: "customers", promotions: "promotions", staff: "staff", accounts: "accounts" };
 const controllers = { dashboard: initDashboard, products: initProducts, categories: initCategories, woods: initWoods, styles: initStyles, imports: initImports, suppliers: initSuppliers, orders: initOrders, customers: initCustomers, promotions: initPromotions, staff: initStaff, accounts: initAccounts };
+const addActions = { products: openAddProduct, categories: openAddCategory, woods: openAddWood, styles: openAddStyle, imports: openAddImport, suppliers: openAddSupplier, customers: openAddCustomer, staff: openAddStaff };
+const refreshAfterAdd = () => {
+  clearRemoteTableCache();
+  return render();
+};
 const preloaders = [getCategories, getImports, getSuppliers, getCustomers, getPromotions, getStaff, getAccounts, getStyles];
 
 function preloadData() {
@@ -61,7 +69,10 @@ function login() {
     error.textContent = "Tên đăng nhập hoặc mật khẩu chưa đúng.";
     event.currentTarget.querySelector(".login-btn").before(error);
   };
-  document.querySelector("#forgot-password").onclick = event => { event.preventDefault(); alert("Chức năng khôi phục mật khẩu sẽ được kết nối sau khi có backend."); };
+  document.querySelector("#forgot-password").onclick = event => {
+    event.preventDefault();
+    showAlertModal("Chức năng khôi phục mật khẩu sẽ được kết nối sau khi có backend.", "info");
+  };
 }
 
 function sidebar() {
@@ -89,7 +100,15 @@ async function render() {
   }
   document.querySelectorAll("[data-page]").forEach(item => item.onclick = () => { state.page = item.dataset.page; state.query = ""; render(); });
   document.querySelector(".logout").onclick = () => { sessionStorage.removeItem("woodcraft-authenticated"); render(); };
-  document.querySelector("#add-btn")?.addEventListener("click", () => alert("Form này sẽ được kết nối model và API ở bước backend."));
+  const addAction = addActions[state.page];
+  document.querySelector("#add-btn")?.addEventListener("click", () => {
+    Promise.resolve(addAction?.()).catch(error => {
+      console.error("Không thể mở biểu mẫu thêm dữ liệu:", error);
+      showAlertModal(`Không thể tải dữ liệu lựa chọn: ${error.message}`, "error");
+    });
+  });
+  document.removeEventListener("data-added", refreshAfterAdd);
+  document.addEventListener("data-added", refreshAfterAdd);
   if (state.page === "dashboard") setTimeout(preloadData, 0);
 }
 

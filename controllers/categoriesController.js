@@ -1,11 +1,17 @@
 import { bindSearch, rowActions } from "./shared.js";
-import { getCategories } from "../models/categoriesModel.js";
+import { getCategories, createCategory } from "../models/categoriesModel.js";
+import { showAddForm } from "./shared.js";
 
-let dataPromise;
+export function openAddCategory() {
+  showAddForm({
+    title: "Thêm loại sản phẩm",
+    fields: [{ name: "tenLoai", label: "Tên loại sản phẩm" }],
+    onSubmit: data => createCategory({ tenLoai: data.tenLoai, trangThai: 1 })
+  });
+}
 
 export async function initCategories(query, rerender) {
-  dataPromise ??= getCategories();
-  const categories = await dataPromise;
+  const categories = await getCategories();
   const rows = categories.filter(item => `${item.id} ${item.name}`.toLowerCase().includes(query.toLowerCase()));
   document.querySelector("#categories-body").innerHTML = rows.map(item => `
     <tr><td class="code">${item.id}</td><td><b>${item.name}</b></td><td>${item.description}</td>
