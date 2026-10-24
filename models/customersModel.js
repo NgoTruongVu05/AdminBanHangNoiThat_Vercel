@@ -26,7 +26,7 @@ export async function getCustomers() {
       email: field(item, "email") || "",
       orders: 0,
       spending: 0,
-      status: field(item, "trangThai") === 0 ? "Bị khóa" : "Bình thường"
+      status: field(item, "trangThai") === 0 ? "Bị khóa" : "Đang hoạt động"
     }));
   });
 }

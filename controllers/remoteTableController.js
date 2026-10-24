@@ -26,9 +26,9 @@ export async function initRemoteTable(type, query, onQueryChange, loadData) {
       rows: data.customers,
       body: "customers-body",
       defaultKeys: ["id", "name"],
-      fields: { phone: "Số điện thoại", email: "Email", orders: "Đơn hàng", spending: "Chi tiêu" },
+      fields: { phone: "Số điện thoại", email: "Email", orders: "Đơn hàng", status: "Trạng thái" },
       search: row => `${row.id} ${row.name}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td class="mono">${escape(row.phone)}<div class="sub">${escape(row.email)}</div></td><td><span class="tag">${row.orders} đơn</span></td><td class="money">${money(row.spending)}</td><td class="actions">${rowActions()}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td class="mono">${escape(row.phone)}<div class="sub">${escape(row.email)}</div></td><td><span class="tag">${row.orders} đơn</span></td><td><span class="tag ${row.status === "Bị khóa" ? "warn" : "green"}">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>`
     },
     imports: {
       rows: data.imports,
