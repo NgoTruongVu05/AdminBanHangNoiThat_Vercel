@@ -1,4 +1,4 @@
-import { bindSearch, money, rowActions } from "./shared.js";
+import { bindDomSearch, money, rowActions, escapeHtml } from "./shared.js";
 import { getProducts, createProduct } from "../models/productsModel.js";
 import { getProductCategoryOptions } from "../models/categoriesModel.js";
 import { getWoodOptions } from "../models/woodsModel.js";
@@ -29,21 +29,33 @@ export async function openAddProduct() {
   });
 }
 
-export async function initProducts(query, rerender) {
+export async function initProducts(query, onQueryChange) {
   const products = await getProducts();
-  const rows = products.filter(product => `${product.id} ${product.name} ${product.wood}`.toLowerCase().includes(query.toLowerCase()));
-  document.querySelector("#products-body").innerHTML = rows.map(product => `
-    <tr>
-      <td class="code">${product.id}</td>
-      <td><b>${product.name}</b><div class="sub">${product.detail}</div></td>
-      <td>${product.category}</td><td>${product.wood}</td>
-      <td class="money">${money(product.price)}</td>
-      <td class="${product.stock <= 3 ? "tag warn" : ""}">${product.stock}</td>
-      <td><span class="tag ${product.status.includes("Tạm") ? "warn" : ""}">${product.status}</span></td>
-      <td class="actions">${rowActions(true, `data-delete="${product.id}"`)}</td>
-    </tr>`).join("");
-  document.querySelector("#products-count").textContent = `${rows.length} / ${products.length}`;
-  bindSearch(rerender, query);
+  const rows = products.map((product, index) => `<tr data-row-index="${index}" data-search="${escapeHtml(`${product.id} ${product.name}`.toLowerCase())}">
+    <td class="code">${product.id}</td>
+    <td><b>${product.name}</b><div class="sub">${product.detail}</div></td>
+    <td>${product.category}</td><td>${product.wood}</td>
+    <td class="money">${money(product.price)}</td>
+    <td class="${product.stock <= 3 ? "tag warn" : ""}">${product.stock}</td>
+    <td><span class="tag ${product.status.includes("Tạm") ? "warn" : ""}">${product.status}</span></td>
+    <td class="actions">${rowActions(true, `data-delete="${product.id}"`)}</td>
+  </tr>`).join("");
+  document.querySelector("#products-body").innerHTML = rows;
+  const productFields = { category: "Phân loại", wood: "Loại gỗ", status: "Trạng thái", stock: "Tồn kho", price: "Đơn giá" };
+  const productData = products.map(product => ({ code: product.id, name: product.name, category: product.category, wood: product.wood, status: product.status, stock: product.stock, price: product.price }));
+  document.querySelector("#products-count").textContent = `${products.length} / ${products.length}`;
+  bindDomSearch({
+    initialQuery: query,
+    rowSelector: "#products-body tr",
+    onQueryChange,
+    onFilter: (currentQuery, visible, total) => {
+      const count = document.querySelector("#products-count");
+      if (count) count.textContent = `${visible} / ${total}`;
+    },
+    fields: productFields,
+    defaultKeys: ["code", "name"],
+    getFieldValue: (index, field) => productData[index]?.[field]
+  });
   document.querySelectorAll("[data-delete]").forEach(button => button.onclick = () => {
     if (confirm("Xóa sản phẩm này khỏi danh sách tạm?")) button.closest("tr").remove();
   });

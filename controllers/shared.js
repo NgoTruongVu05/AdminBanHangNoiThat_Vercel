@@ -52,6 +52,86 @@ export function showAlertModal(message, type = "info") {
   modal.querySelector("[data-alert-close]").focus();
 }
 
+export { escapeHtml };
+
+export function bindDomSearch({
+  initialQuery = "",
+  rowSelector,
+  onQueryChange,
+  onFilter,
+  debounceMs = 150,
+  fields = null,
+  defaultKeys = ["code", "name"],
+  defaultLabel = "Mã và tên",
+  getFieldValue = null
+} = {}) {
+  const search = document.querySelector("#search");
+  if (!search) return;
+
+  const getRows = () => Array.from(document.querySelectorAll(rowSelector || "tbody tr"));
+  let selectedField = "default";
+  let fieldSelect = null;
+
+  if (fields) {
+    fieldSelect = document.createElement("select");
+    fieldSelect.id = "search-field";
+    fieldSelect.style.cssText = "height:34px;margin-left:8px;border:1px solid #dce5ee;border-radius:8px;padding:0 8px;background:#f8fafc;color:#4b5d75;";
+    const makeOption = (value, label) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      return option;
+    };
+    fieldSelect.append(makeOption("default", defaultLabel));
+    Object.entries(fields).forEach(([key, label]) => {
+      fieldSelect.append(makeOption(key, label));
+    });
+    fieldSelect.append(makeOption("__all__", "Tất cả"));
+    search.insertAdjacentElement("afterend", fieldSelect);
+  }
+
+  const readValue = (row, rowIndex, field) => {
+    if (typeof getFieldValue === "function") return getFieldValue(rowIndex, field);
+    return row.dataset[field] ?? "";
+  };
+
+  const applyFilter = query => {
+    const normalized = String(query ?? "").trim().toLowerCase();
+    let visible = 0;
+    const rows = getRows();
+    rows.forEach((row, domIndex) => {
+      const rowIndex = Number(row.dataset.rowIndex ?? domIndex);
+      let haystack = "";
+      if (selectedField === "default") {
+        haystack = defaultKeys.map(key => readValue(row, rowIndex, key)).join(" ");
+      } else if (selectedField === "__all__") {
+        haystack = (fields ? Object.keys(fields) : []).map(key => readValue(row, rowIndex, key)).join(" ");
+        haystack += " " + (row.textContent || "");
+      } else {
+        haystack = readValue(row, rowIndex, selectedField);
+      }
+      const show = !normalized || String(haystack).toLowerCase().includes(normalized);
+      row.style.display = show ? "" : "none";
+      if (show) visible += 1;
+    });
+    onFilter?.(query, visible, rows.length);
+  };
+
+  search.value = initialQuery ?? "";
+  search.oninput = event => {
+    const value = event.target.value;
+    onQueryChange?.(value);
+    clearTimeout(search._searchTimer);
+    search._searchTimer = setTimeout(() => applyFilter(value), debounceMs);
+  };
+  if (fieldSelect) {
+    fieldSelect.onchange = event => {
+      selectedField = event.target.value;
+      applyFilter(search.value);
+    };
+  }
+  applyFilter(initialQuery ?? "");
+}
 export function showAddForm({ title, fields, onSubmit }) {
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";

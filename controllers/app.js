@@ -75,7 +75,7 @@ async function render() {
   const view = await response.text();
   document.querySelector("#app").innerHTML = `<div class="app">${sidebar()}<main class="main">${header()}<div class="content"><div class="page-title"><div><div class="eyebrow">WOODCRAFT /</div><h1>${titles[state.page]}</h1></div></div>${view}</div></main></div>`;
   try {
-    await controllers[state.page]?.(state.query, query => { state.query = query; render(); });
+    await controllers[state.page]?.(state.query, query => { state.query = query; });
   } catch (error) {
     console.error(`Không thể tải dữ liệu trang ${state.page}:`, error);
     document.querySelector(".content").innerHTML = `<main class="login-page"><section class="login-card"><div class="eyebrow">DATABASE CONNECTION ERROR</div><h1>Không thể tải dữ liệu</h1><p>${error.message}</p><button class="btn" id="retry-data">Thử lại</button></section></main>`;
