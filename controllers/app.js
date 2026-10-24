@@ -92,7 +92,9 @@ async function render() {
     });
   });
   document.removeEventListener("data-added", refreshAfterAdd);
+  document.removeEventListener("data-updated", refreshAfterAdd);
   document.addEventListener("data-added", refreshAfterAdd);
+  document.addEventListener("data-updated", refreshAfterAdd);
   if (state.page === "dashboard") setTimeout(preloadData, 0);
 }
 

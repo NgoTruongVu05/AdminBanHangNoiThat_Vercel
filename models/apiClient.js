@@ -24,3 +24,20 @@ export async function insertRecord(table, record) {
   if (!response.ok) throw new Error(payload.error || `API trả về ${response.status}`);
   return payload.data;
 }
+
+export async function updateRecord(table, match, record) {
+  const databaseRecord = Object.fromEntries(
+    Object.entries(record).map(([name, value]) => [name.toLowerCase(), value])
+  );
+  const databaseMatch = Object.fromEntries(
+    Object.entries(match || {}).map(([name, value]) => [name.toLowerCase(), value])
+  );
+  const response = await fetch("/api/data", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ table, record: databaseRecord, match: databaseMatch })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || `API trả về ${response.status}`);
+  return payload.data;
+}

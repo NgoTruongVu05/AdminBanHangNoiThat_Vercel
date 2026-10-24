@@ -5,9 +5,9 @@ const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character =>
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[character]));
 
-export const rowActions = (includeDelete = false, deleteAttributes = "") => `
-  <button type="button" class="icon-btn" title="Xem" aria-label="Xem">${materialIcon("visibility")}</button>
-  <button type="button" class="icon-btn" title="Sửa" aria-label="Sửa">${materialIcon("edit")}</button>
+export const rowActions = (includeDelete = false, deleteAttributes = "", editAttributes = "", includeLock = false, lockAttributes = "", locked = false) => `
+  <button type="button" class="icon-btn" title="Sửa" aria-label="Sửa" ${editAttributes}>${materialIcon("edit")}</button>
+  ${includeLock ? `<button type="button" class="icon-btn ${locked ? "danger" : ""}" title="${locked ? "Mở khóa" : "Khóa"}" aria-label="${locked ? "Mở khóa" : "Khóa"}" ${lockAttributes}>${materialIcon(locked ? "lock_open_right" : "lock")}</button>` : ""}
   ${includeDelete ? `<button type="button" class="icon-btn danger" title="Xóa" aria-label="Xóa" ${deleteAttributes}>${materialIcon("delete")}</button>` : ""}`;
 
 export const toolbar = (placeholder, button = "Thêm mới", filters = "") => `
@@ -185,3 +185,81 @@ export function showAddForm({ title, fields, onSubmit }) {
     }
   };
 }
+export function showConfirmModal(message) {
+  return new Promise(resolve => {
+    const backdrop = document.createElement("div");
+    backdrop.className = "alert-backdrop";
+    const modal = document.createElement("section");
+    modal.className = "alert-modal alert-info";
+    modal.innerHTML = `<div class="alert-modal-icon">${materialIcon("help")}</div>
+      <p>${escapeHtml(message)}</p>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button type="button" class="btn alt" data-confirm-cancel>Hủy</button>
+        <button type="button" class="btn" data-confirm-ok>Xác nhận</button>
+      </div>`;
+    backdrop.append(modal);
+    document.body.append(backdrop);
+    const close = result => { backdrop.remove(); resolve(result); };
+    modal.querySelector("[data-confirm-ok]").onclick = () => close(true);
+    modal.querySelector("[data-confirm-cancel]").onclick = () => close(false);
+    backdrop.onclick = event => { if (event.target === backdrop) close(false); };
+  });
+}
+
+export function showEditForm({ title, fields, initialValues = {}, onSubmit, successMessage = "Đã cập nhật dữ liệu thành công." }) {
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  const renderOptions = (field, selectedValue = "") => {
+    const dependencyValue = field.dependsOn
+      ? backdrop.querySelector(`[name="${field.dependsOn}"]`)?.value
+      : null;
+    const options = (field.options || []).filter(option =>
+      !field.dependsOn || String(option.categoryId) === String(dependencyValue)
+    );
+    return `${field.placeholder ? `<option value="">${escapeHtml(field.placeholder)}</option>` : ""}
+      ${options.map(option => `<option value="${escapeHtml(option.value)}" ${String(option.value) === String(selectedValue) ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}`;
+  };
+  backdrop.innerHTML = `<form class="modal">
+    <h2>${title}</h2>
+    ${fields.map(field => `<div class="form-row"><label>${field.label}</label>${field.options
+      ? `<select name="${escapeHtml(field.name)}" ${field.dependsOn ? `data-depends-on="${escapeHtml(field.dependsOn)}"` : ""} ${field.required === false ? "" : "required"}>${renderOptions(field, initialValues[field.name] ?? "")}</select>`
+      : `<input name="${escapeHtml(field.name)}" type="${escapeHtml(field.type || "text")}" ${field.required === false ? "" : "required"} ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""} value="${escapeHtml(initialValues[field.name] ?? "")}">`
+    }</div>`).join("")}
+    <div class="modal-actions"><button type="button" class="btn alt" data-cancel>Hủy</button><button class="btn" type="submit">Lưu dữ liệu</button></div>
+  </form>`;
+  document.body.append(backdrop);
+  const form = backdrop.querySelector("form");
+  form.querySelectorAll("[data-depends-on]").forEach(select => {
+    const dependency = form.querySelector(`[name="${select.dataset.dependsOn}"]`);
+    const field = fields.find(item => item.name === select.name);
+    const updateOptions = (selectedValue) => {
+      const current = selectedValue ?? select.value;
+      select.innerHTML = renderOptions(field, current);
+      if (![...select.options].some(option => option.value === String(current))) select.value = "";
+      else select.value = current;
+    };
+    dependency?.addEventListener("change", () => updateOptions());
+  updateOptions(initialValues[field.name]);
+  });
+  const close = () => backdrop.remove();
+  backdrop.querySelector("[data-cancel]").onclick = close;
+  backdrop.onclick = event => { if (event.target === backdrop) close(); };
+  form.onsubmit = async event => {
+    event.preventDefault();
+    const submit = form.querySelector("button[type=submit]");
+    submit.disabled = true;
+    try {
+      const result = await onSubmit(Object.fromEntries(new FormData(form)));
+      if (result === false) { submit.disabled = false; return; }
+      close();
+      document.dispatchEvent(new CustomEvent("data-updated"));
+      showAlertModal(successMessage, "success");
+    } catch (error) {
+      submit.disabled = false;
+      console.error("Không thể cập nhật dữ liệu:", error);
+      showAlertModal(`Không thể cập nhật dữ liệu: ${error.message}`, "error");
+    }
+  };
+}
+
+

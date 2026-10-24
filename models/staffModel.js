@@ -1,6 +1,6 @@
-import { fetchTables, insertRecord } from "./apiClient.js";
+import { fetchTables, insertRecord, updateRecord } from "./apiClient.js";
 import { cached, field, invalidate } from "./modelUtils.js";
-import { createAccount, ensureAccountAvailable } from "./accountsModel.js";
+import { createAccount, ensureAccountAvailable, updateAccountStatus } from "./accountsModel.js";
 
 export async function createStaff(record) {
   const result = await insertRecord("NHANVIEN", record);
@@ -21,15 +21,37 @@ export async function createStaffWithAccount(staff, account) {
   return createdStaff;
 }
 
+export async function updateStaff(id, record) {
+  const result = await updateRecord("NHANVIEN", { CCCD: id }, record);
+  invalidate("staff");
+  return result;
+}
+
+export async function updateStaffStatus(id, trangThai) {
+  const result = await updateStaff(id, { trangThai });
+  try {
+    await updateAccountStatus({ cccd_nhanVien: id }, trangThai);
+  } catch (error) {
+    console.warn("Không thể đồng bộ trạng thái DANGNHAP cho nhân viên:", error.message);
+  }
+  invalidate("staff");
+  invalidate("accounts");
+  return result;
+}
+
 export async function getStaff() {
   return cached("staff", async () => {
     const raw = await fetchTables(["NHANVIEN"]);
     return (raw.NHANVIEN || []).map(item => ({
+      rawId: field(item, "CCCD"),
       id: field(item, "CCCD"),
       name: field(item, "hoTen") || "",
       role: field(item, "vaiTro") === 1 ? "Quản trị viên" : "Nhân viên",
       phone: field(item, "sdt") || "",
-      status: field(item, "trangThai") === 0 ? "Bị khóa" : "Đang hoạt động"
+      email: field(item, "email") || "",
+      status: field(item, "trangThai") === 0 ? "Bị khóa" : "Đang hoạt động",
+      trangThai: Number(field(item, "trangThai") ?? 1),
+      vaiTro: field(item, "vaiTro")
     }));
   });
 }

@@ -1,4 +1,4 @@
-import { fetchTables, insertRecord } from "./apiClient.js";
+import { fetchTables, insertRecord, updateRecord } from "./apiClient.js";
 import { cached, field, invalidate } from "./modelUtils.js";
 
 function toBase64Url(bytes) {
@@ -119,6 +119,21 @@ export async function createAccount(record) {
   return result;
 }
 
+export async function updateAccount(match, record) {
+  const result = await updateRecord("DANGNHAP", match, record);
+  invalidate("accounts");
+  return result;
+}
+
+export async function updateAccountStatus(match, trangThai) {
+  return updateAccount(match, { trangThai });
+}
+
+export async function updateAccountPassword(match, password) {
+  const hashed = await hashPassword(password);
+  return updateAccount(match, { matKhau: hashed });
+}
+
 export async function getAccounts() {
   return cached("accounts", async () => {
     const raw = await fetchTables(["DANGNHAP", "NHANVIEN", "KHACHHANG"]);
@@ -128,14 +143,15 @@ export async function getAccounts() {
       const isCustomer = String(field(item, "loaiTaiKhoan")).toUpperCase() === "KHACHHANG";
       const owner = (isCustomer
         ? customers.find(entry => String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang")))
-        : staff.find(entry => field(entry, "CCCD") === field(item, "cccd_nhanVien"))) || {};
+        : staff.find(entry => String(field(entry, "CCCD")) === String(field(item, "cccd_nhanVien")))) || {};
       return {
         id: field(item, "tenDangNhap"),
         username: field(item, "tenDangNhap"),
         name: field(owner, "hoTen") || "",
         email: field(owner, "email") || "",
         role: field(item, "loaiTaiKhoan"),
-        status: field(item, "trangThai") === 0 ? "Bị khóa" : "Hoạt động"
+        status: field(item, "trangThai") === 0 ? "Bị khóa" : "Hoạt động",
+         trangThai: Number(field(item, "trangThai") ?? 1),
       };
     });
   });
