@@ -28,7 +28,6 @@ export async function updateStaff(id, record) {
 }
 
 export async function updateStaffStatus(id, trangThai) {
-  const result = await updateStaff(id, { trangThai });
   try {
     await updateAccountStatus({ cccd_nhanVien: id }, trangThai);
   } catch (error) {
@@ -36,22 +35,28 @@ export async function updateStaffStatus(id, trangThai) {
   }
   invalidate("staff");
   invalidate("accounts");
-  return result;
 }
 
 export async function getStaff() {
   return cached("staff", async () => {
-    const raw = await fetchTables(["NHANVIEN"]);
-    return (raw.NHANVIEN || []).map(item => ({
-      rawId: field(item, "CCCD"),
-      id: field(item, "CCCD"),
-      name: field(item, "hoTen") || "",
-      role: field(item, "vaiTro") === 1 ? "Quản trị viên" : "Nhân viên",
-      phone: field(item, "sdt") || "",
-      email: field(item, "email") || "",
-      status: field(item, "trangThai") === 0 ? "Bị khóa" : "Đang hoạt động",
-      trangThai: Number(field(item, "trangThai") ?? 1),
-      vaiTro: field(item, "vaiTro")
-    }));
+    const raw = await fetchTables(["NHANVIEN", "DANGNHAP"]);
+    const accounts = raw.DANGNHAP || [];
+    return (raw.NHANVIEN || []).map(item => {
+      const account = accounts.find(entry =>
+        String(field(entry, "cccd_nhanVien")) === String(field(item, "CCCD"))
+      );
+      const trangThai = Number(field(account || {}, "trangThai") ?? 1);
+      return {
+        rawId: field(item, "CCCD"),
+        id: field(item, "CCCD"),
+        name: field(item, "hoTen") || "",
+        role: field(item, "vaiTro") === 1 ? "Quản trị viên" : "Nhân viên",
+        phone: field(item, "sdt") || "",
+        email: field(item, "email") || "",
+        status: trangThai === 0 ? "Bị khóa" : "Đang hoạt động",
+        trangThai,
+        vaiTro: field(item, "vaiTro")
+      };
+    });
   });
 }

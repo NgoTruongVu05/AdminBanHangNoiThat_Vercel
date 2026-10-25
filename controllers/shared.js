@@ -150,7 +150,11 @@ export function showAddForm({ title, fields, onSubmit }) {
     ${fields.map(field => `<div class="form-row"><label>${field.label}</label>${
       field.options
         ? `<select name="${escapeHtml(field.name)}" ${field.dependsOn ? `data-depends-on="${escapeHtml(field.dependsOn)}"` : ""} ${field.required === false ? "" : "required"}>${renderOptions(field)}</select>`
-        : `<input name="${escapeHtml(field.name)}" type="${escapeHtml(field.type || "text")}" ${field.required === false ? "" : "required"} ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""}>`
+        : field.type === "textarea"
+        ? `<textarea name="${escapeHtml(field.name)}" ${field.required === false ? "" : "required"} ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""}></textarea>`
+        : field.type === "file"
+          ? `<input name="${escapeHtml(field.name)}" type="file" ${field.required === false ? "" : "required"} ${field.accept ? `accept="${escapeHtml(field.accept)}"` : 'accept="image/*"'}>`
+          : `<input name="${escapeHtml(field.name)}" type="${escapeHtml(field.type || "text")}" ${field.required === false ? "" : "required"} ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""}>`
     }</div>`).join("")}
     <div class="modal-actions"><button type="button" class="btn alt" data-cancel>Hủy</button><button class="btn" type="submit">Lưu dữ liệu</button></div>
   </form>`;
@@ -223,7 +227,11 @@ export function showEditForm({ title, fields, initialValues = {}, onSubmit, succ
     <h2>${title}</h2>
     ${fields.map(field => `<div class="form-row"><label>${field.label}</label>${field.options
       ? `<select name="${escapeHtml(field.name)}" ${field.dependsOn ? `data-depends-on="${escapeHtml(field.dependsOn)}"` : ""} ${field.required === false ? "" : "required"}>${renderOptions(field, initialValues[field.name] ?? "")}</select>`
-      : `<input name="${escapeHtml(field.name)}" type="${escapeHtml(field.type || "text")}" ${field.required === false ? "" : "required"} ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""} value="${escapeHtml(initialValues[field.name] ?? "")}">`
+      : field.type === "textarea"
+      ? `<textarea name="${escapeHtml(field.name)}" ${field.required === false ? "" : "required"} ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""}>${escapeHtml(initialValues[field.name] ?? "")}</textarea>`
+      : field.type === "file"
+        ? `<input name="${escapeHtml(field.name)}" type="file" ${field.required === false ? "" : ""} ${field.accept ? `accept="${escapeHtml(field.accept)}"` : 'accept="image/*"'}>`
+        : `<input name="${escapeHtml(field.name)}" type="${escapeHtml(field.type || "text")}" ${field.required === false ? "" : "required"} ${field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : ""} value="${escapeHtml(initialValues[field.name] ?? "")}">`
     }</div>`).join("")}
     <div class="modal-actions"><button type="button" class="btn alt" data-cancel>Hủy</button><button class="btn" type="submit">Lưu dữ liệu</button></div>
   </form>`;

@@ -3,6 +3,7 @@ import { getProducts, createProduct, updateProduct, updateProductStatus } from "
 import { getProductCategoryOptions } from "../models/categoriesModel.js";
 import { getWoodOptions } from "../models/woodsModel.js";
 import { getStyleOptions } from "../models/stylesModel.js";
+import { uploadImage } from "../models/storageModel.js";
 
 export async function openAddProduct() {
   const [categories, woods, styles] = await Promise.all([getProductCategoryOptions(), getWoodOptions(), getStyleOptions()]);
@@ -14,20 +15,18 @@ export async function openAddProduct() {
       { name: "id_kieuDang", label: "Kiểu dáng", options: styles, dependsOn: "id_loaiSP", placeholder: "Chọn kiểu dáng" },
       { name: "id_maGo", label: "Loại gỗ", options: woods },
       { name: "donGia", label: "Đơn giá", type: "text", placeholder: "Nhập đơn giá, ví dụ: 1250000" },
-      { name: "soLuong", label: "Tồn kho", type: "text", placeholder: "0" }
+      { name: "moTa", label: "Mô tả", type: "textarea", required: false, placeholder: "Mô tả sản phẩm" },
+      { name: "hinhAnh", label: "Hình ảnh", type: "file", required: false, accept: "image/*" }
     ],
-    onSubmit: data => {
+    onSubmit: async data => {
       const price = Number(data.donGia);
       if (!Number.isFinite(price) || price <= 0) {
         throw new Error("Đơn giá phải là số và lớn hơn 0.");
       }
-      const stock = Number(data.soLuong || 0);
-      if (!Number.isFinite(stock) || stock < 0) {
-        throw new Error("Tồn kho phải là số không âm.");
-      }
+      const imageUrl = await uploadImage(data.hinhAnh);
       return createProduct({
         tenSanPham: data.tenSanPham, id_kieuDang: Number(data.id_kieuDang), id_maGo: Number(data.id_maGo),
-        donGia: price, soLuong: stock, trangThai: 1
+        donGia: price, moTa: data.moTa || null, hinhAnh: imageUrl, trangThai: 1
       });
     }
   });
@@ -43,7 +42,8 @@ export async function openEditProduct(product) {
       { name: "id_kieuDang", label: "Kiểu dáng", options: styles, dependsOn: "id_loaiSP", placeholder: "Chọn kiểu dáng" },
       { name: "id_maGo", label: "Loại gỗ", options: woods },
       { name: "donGia", label: "Đơn giá", type: "text" },
-      { name: "soLuong", label: "Tồn kho", type: "text" }
+      { name: "moTa", label: "Mô tả", type: "textarea", required: false, placeholder: "Mô tả sản phẩm" },
+      { name: "hinhAnh", label: "Hình ảnh mới", type: "file", required: false, accept: "image/*" }
     ],
     initialValues: {
       tenSanPham: product.name,
@@ -51,20 +51,21 @@ export async function openEditProduct(product) {
       id_kieuDang: product.styleId,
       id_maGo: product.woodId,
       donGia: product.price,
-      soLuong: product.stock
+      moTa: product.description || ""
     },
     onSubmit: async data => {
       const price = Number(data.donGia);
       if (!Number.isFinite(price) || price <= 0) throw new Error("Đơn giá phải là số và lớn hơn 0.");
-      const stock = Number(data.soLuong);
-      if (!Number.isFinite(stock) || stock < 0) throw new Error("Tồn kho phải là số không âm.");
-      return updateProduct(product.rawId, {
+      const update = {
         tenSanPham: data.tenSanPham,
         id_kieuDang: Number(data.id_kieuDang),
         id_maGo: Number(data.id_maGo),
         donGia: price,
-        soLuong: stock
-      });
+        moTa: data.moTa || null
+      };
+      const imageUrl = await uploadImage(data.hinhAnh);
+      if (imageUrl) update.hinhAnh = imageUrl;
+      return updateProduct(product.rawId, update);
     }
   });
 }
@@ -73,6 +74,7 @@ export async function initProducts(query, onQueryChange) {
   const products = await getProducts();
   const rows = products.map((product, index) => `<tr data-row-index="${index}" data-search="${escapeHtml(`${product.id} ${product.name}`.toLowerCase())}">
     <td class="code">${product.id}</td>
+    <td>${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;">` : ""}</td>
     <td><b>${product.name}</b><div class="sub">${product.detail}</div></td>
     <td>${product.category}</td><td>${product.style}</td><td>${product.wood}</td>
     <td class="money">${money(product.price)}</td>

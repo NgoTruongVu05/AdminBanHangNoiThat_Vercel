@@ -24,7 +24,7 @@ export function openAddCustomer() {
       if (!isValidPhone(data.SDT)) throw new Error("Số điện thoại không hợp lệ.");
       if (data.email && !isValidEmail(data.email)) throw new Error("Email không hợp lệ.");
       return createCustomerWithAccount(
-        { hoTen: data.hoTen, SDT: data.SDT, email: data.email, trangThai: 1 },
+        { hoTen: data.hoTen, SDT: data.SDT, email: data.email },
         { tenDangNhap: data.tenDangNhap, matKhau: data.matKhau, loaiTaiKhoan: "KHACHHANG", trangThai: 1 }
       );
     }

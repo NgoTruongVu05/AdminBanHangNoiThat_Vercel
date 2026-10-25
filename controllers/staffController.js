@@ -34,7 +34,7 @@ export function openAddStaff() {
       if (!isValidPhone(data.sdt)) throw new Error("Số điện thoại không hợp lệ.");
       if (!isValidEmail(data.email)) throw new Error("Email không hợp lệ.");
       return createStaffWithAccount(
-        { CCCD: data.CCCD, hoTen: data.hoTen, sdt: data.sdt, email: data.email, vaiTro: Number(data.vaiTro), trangThai: 1 },
+        { CCCD: data.CCCD, hoTen: data.hoTen, sdt: data.sdt, email: data.email, vaiTro: Number(data.vaiTro) },
         { tenDangNhap: data.tenDangNhap, matKhau: data.matKhau, loaiTaiKhoan: "NHANVIEN", cccd_nhanVien: data.CCCD, trangThai: 1 }
       );
     }

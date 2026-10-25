@@ -23,7 +23,6 @@ export async function updateCustomer(id, record) {
 }
 
 export async function updateCustomerStatus(id, trangThai) {
-  const result = await updateCustomer(id, { trangThai });
   try {
     await updateAccountStatus({ id_khachHang: id }, trangThai);
   } catch (error) {
@@ -31,22 +30,28 @@ export async function updateCustomerStatus(id, trangThai) {
   }
   invalidate("customers");
   invalidate("accounts");
-  return result;
 }
 
 export async function getCustomers() {
   return cached("customers", async () => {
-    const raw = await fetchTables(["KHACHHANG"]);
-    return (raw.KHACHHANG || []).map(item => ({
-      rawId: field(item, "id_khachHang"),
-      id: String(field(item, "id_khachHang")),
-      name: field(item, "hoTen") || "",
-      phone: field(item, "SDT") || field(item, "sdt") || "",
-      email: field(item, "email") || "",
-      orders: 0,
-      spending: 0,
-      status: field(item, "trangThai") === 0 ? "Bị khóa" : "Đang hoạt động",
-      trangThai: Number(field(item, "trangThai") ?? 1)
-    }));
+    const raw = await fetchTables(["KHACHHANG", "DANGNHAP"]);
+    const accounts = raw.DANGNHAP || [];
+    return (raw.KHACHHANG || []).map(item => {
+      const account = accounts.find(entry =>
+        String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang"))
+      );
+      const trangThai = Number(field(account || {}, "trangThai") ?? 1);
+      return {
+        rawId: field(item, "id_khachHang"),
+        id: String(field(item, "id_khachHang")),
+        name: field(item, "hoTen") || "",
+        phone: field(item, "SDT") || field(item, "sdt") || "",
+        email: field(item, "email") || "",
+        orders: 0,
+        spending: 0,
+        status: trangThai === 0 ? "Bị khóa" : "Đang hoạt động",
+        trangThai
+      };
+    });
   });
 }
