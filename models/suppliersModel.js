@@ -17,6 +17,16 @@ export async function updateSupplierStatus(id, trangThai) {
   return updateSupplier(id, { trangThai });
 }
 
+export async function getSupplierOptions() {
+  const raw = await fetchTables(["NHACUNGCAP"]);
+  return (raw.NHACUNGCAP || [])
+    .filter(item => field(item, "trangThai") !== 0)
+    .map(item => ({
+      value: field(item, "id_nhaCungCap"),
+      label: field(item, "tenNhaCungCap") || ""
+    }));
+}
+
 export async function getSuppliers() {
   return cached("suppliers", async () => {
     const raw = await fetchTables(["NHACUNGCAP"]);

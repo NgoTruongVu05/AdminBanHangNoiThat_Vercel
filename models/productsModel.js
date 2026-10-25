@@ -48,3 +48,13 @@ export async function getProducts() {
     }));
   });
 }
+export async function getProductOptions() {
+  const raw = await fetchTables(["SANPHAM"]);
+  return (raw.SANPHAM || [])
+    .filter(item => field(item, "trangThai") !== 0)
+    .map(item => ({
+      value: field(item, "id_sanPham"),
+      label: field(item, "tenSanPham") || "",
+      price: Number(field(item, "donGia") || 0)
+    }));
+}
