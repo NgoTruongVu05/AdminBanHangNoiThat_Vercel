@@ -33,7 +33,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       rows: data.suppliers,
       body: "suppliers-body",
       defaultKeys: ["id", "name"],
-      fields: { address: "Địa chỉ", phone: "Liên hệ", status: "Trạng thái" },
+      fields: { address: "Địa chỉ", phone: "Liên hệ" },
+      sideFilter: { selector: "#supplier-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đã khóa", "Đang hợp tác"] },
       search: row => `${row.id} ${row.name}`,
       render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td>${escape(row.address)}</td><td class="mono">${escape(row.phone)}</td><td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
     },
@@ -41,7 +42,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       rows: data.customers,
       body: "customers-body",
       defaultKeys: ["id", "name"],
-      fields: { phone: "Số điện thoại", email: "Email", orders: "Đơn hàng", status: "Trạng thái" },
+      fields: { phone: "Số điện thoại", email: "Email", orders: "Đơn hàng" },
+      sideFilter: { selector: "#customer-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Bị khóa", "Đang hoạt động"] },
       search: row => `${row.id} ${row.name}`,
       render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td class="mono">${escape(row.phone)}<div class="sub">${escape(row.email)}</div></td><td><span class="tag">${row.orders} đơn</span></td><td><span class="tag ${row.status === "Bị khóa" ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
     },
@@ -49,7 +51,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       rows: data.imports,
       body: "imports-body",
       defaultKeys: ["id", "supplier"],
-      fields: { date: "Ngày nhập", count: "Số dòng SP", status: "Trạng thái" },
+      fields: { date: "Ngày nhập", count: "Số dòng SP" },
+      sideFilter: { selector: "#import-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đang nhập", "Đã hoàn tất"] },
       search: row => `${row.id} ${row.supplier}`,
       render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td class="mono">${escape(row.date)}</td><td>${escape(row.supplier)}</td><td><span class="tag">${row.count} dòng SP</span></td><td><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></td><td class="actions"><button type="button" class="icon-btn" title="Xem chi tiết" aria-label="Xem chi tiết" data-view-index="${index}">${materialIcon("visibility")}</button>${row.status === "Đang nhập" ? `<button type="button" class="icon-btn" title="Sửa" aria-label="Sửa" data-edit-index="${index}">${materialIcon("edit")}</button><button type="button" class="icon-btn" title="Duyệt" aria-label="Duyệt" data-approve-index="${index}">${materialIcon("check")}</button>` : ""}</td></tr>`
     },
@@ -57,7 +60,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       rows: data.promotions,
       body: "promotions-body",
       defaultKeys: ["id", "name"],
-      fields: { type: "Loại", period: "Thời gian", status: "Trạng thái" },
+      fields: { type: "Loại", period: "Thời gian" },
+      sideFilter: { selector: "#promotion-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đã tắt", "Đang áp dụng"] },
       search: row => `${row.id} ${row.name}`,
       render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td><span class="tag">${escape(row.type)}</span></td><td class="mono">${escape(row.period)}</td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>`
     },
@@ -65,7 +69,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       rows: data.staff,
       body: "staff-body",
       defaultKeys: ["id", "name"],
-      fields: { role: "Bộ phận", phone: "Số điện thoại", status: "Trạng thái" },
+      fields: { role: "Bộ phận", phone: "Số điện thoại" },
+      sideFilter: { selector: "#staff-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Bị khóa", "Đang hoạt động"] },
       search: row => `${row.id} ${row.name} ${row.role}`,
       render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td><span class="tag blue">${escape(row.role)}</span></td><td class="mono">${escape(row.phone)}</td><td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
     },
@@ -73,7 +78,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       rows: data.accounts,
       body: "accounts-body",
       defaultKeys: ["username", "name"],
-      fields: { email: "Email", role: "Vai trò", status: "Trạng thái" },
+      fields: { email: "Email", role: "Vai trò" },
+      sideFilter: { selector: "#account-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Bị khóa", "Đang hoạt động"] },
       search: row => `${row.username} ${row.name} ${row.email}`,
       render: (row, index) => `<tr data-row-index="${index}"><td><b>${escape(row.username)}</b></td><td>${escape(row.name)}<div class="sub">${escape(row.email)}</div></td><td><span class="tag">${escape(row.role)}</span></td><td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
     },
@@ -81,7 +87,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       rows: data.styles,
       body: "styles-body",
       defaultKeys: ["id", "name"],
-      fields: { category: "Loại sản phẩm", status: "Trạng thái" },
+      fields: { category: "Loại sản phẩm" },
+      sideFilter: { selector: "#style-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đã khóa", "Đang sử dụng"] },
       search: row => `${row.id} ${row.name} ${row.category}`,
       render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td>${escape(row.category)}</td><td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
     }
@@ -92,6 +99,20 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
   document.querySelectorAll(`#${config.body} tr`).forEach((row, index) => {
     row.dataset.search = String(config.search(allRows[index]) || "").toLowerCase();
   });
+  const sideFilters = [];
+  if (config.sideFilter) {
+    const sf = config.sideFilter;
+    const select = document.querySelector(sf.selector);
+    if (select) {
+      const current = select.value;
+      const sourceValues = sf.options ? sf.options : allRows.map(row => sf.getValue(row));
+      const unique = [...new Set(sourceValues.map(value => String(value ?? "")))].filter(value => value !== "");
+      select.innerHTML = `<option value="">${escape(sf.allLabel)}</option>` + unique.map(value => `<option value="${escape(value)}">${escape(value)}</option>`).join("");
+      if ([...select.options].some(option => option.value === current)) select.value = current;
+      else select.value = "";
+    }
+    sideFilters.push({ selector: sf.selector, getValue: (row, rowIndex) => sf.getValue(allRows[rowIndex]) });
+  }
   bindDomSearch({
     initialQuery: query,
     rowSelector: `#${config.body} tr`,
@@ -99,7 +120,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
     fields: config.fields,
     defaultKeys: config.defaultKeys,
     defaultLabel: type === "imports" ? "Mã và NCC" : type === "accounts" ? "Tên đăng nhập và họ tên" : "Mã và tên",
-    getFieldValue: (index, field) => allRows[index]?.[field]
+    getFieldValue: (index, field) => allRows[index]?.[field],
+    sideFilters
   });
 
   if (options.onEdit) {

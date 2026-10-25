@@ -150,7 +150,7 @@ export async function getAccounts() {
         name: field(owner, "hoTen") || "",
         email: field(owner, "email") || "",
         role: field(item, "loaiTaiKhoan"),
-        status: field(item, "trangThai") === 0 ? "Bị khóa" : "Hoạt động",
+        status: field(item, "trangThai") === 0 ? "Bị khóa" : "Đang hoạt động",
          trangThai: Number(field(item, "trangThai") ?? 1),
       };
     });

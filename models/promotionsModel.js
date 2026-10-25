@@ -9,7 +9,8 @@ export async function getPromotions() {
       name: field(item, "tenCTKM") || "",
       type: "Theo sản phẩm",
       period: `${date(field(item, "ngayBD"))} → ${date(field(item, "ngayKT"))}`,
-      status: field(item, "trangThai") === 0 ? "Đã tắt" : "Đang áp dụng"
+      status: field(item, "trangThai") === 0 ? "Đã tắt" : "Đang áp dụng",
+      trangThai: Number(field(item, "trangThai") ?? 1)
     }));
   });
 }

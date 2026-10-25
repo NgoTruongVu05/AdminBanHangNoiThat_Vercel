@@ -83,9 +83,17 @@ export async function initProducts(query, onQueryChange) {
     <td class="actions">${rowActions(true, `data-delete="${product.id}"`, `data-edit="${product.rawId}"`, true, `data-lock="${product.rawId}"`, product.trangThai === 0)}</td>
   </tr>`).join("");
   document.querySelector("#products-body").innerHTML = rows;
-  const productFields = { category: "Phân loại", style: "Kiểu dáng", wood: "Loại gỗ", status: "Trạng thái", stock: "Tồn kho", price: "Đơn giá" };
-  const productData = products.map(product => ({ code: product.id, name: product.name, category: product.category, style: product.style, wood: product.wood, status: product.status, stock: product.stock, price: product.price }));
+  const productFields = { category: "Phân loại", style: "Kiểu dáng", wood: "Loại gỗ", stock: "Tồn kho", price: "Đơn giá" };
+  const productData = products.map(product => ({ code: product.id, name: product.name, category: product.category, style: product.style, wood: product.wood, status: product.status, trangThai: product.trangThai, stock: product.stock, price: product.price }));
   document.querySelector("#products-count").textContent = `${products.length} / ${products.length}`;
+  const productFilter = document.querySelector("#product-filter");
+  if (productFilter) {
+    const current = productFilter.value;
+    const values = ["Đã khóa", "Đang sử dụng"];
+    productFilter.innerHTML = `<option value="">Tất cả trạng thái</option>` + values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+    if ([...productFilter.options].some(option => option.value === current)) productFilter.value = current;
+    else productFilter.value = "";
+  }
   bindDomSearch({
     initialQuery: query,
     rowSelector: "#products-body tr",
@@ -96,7 +104,8 @@ export async function initProducts(query, onQueryChange) {
     },
     fields: productFields,
     defaultKeys: ["code", "name"],
-    getFieldValue: (index, field) => productData[index]?.[field]
+    getFieldValue: (index, field) => productData[index]?.[field],
+    sideFilters: [{ selector: "#product-filter", getValue: (row, rowIndex) => productData[rowIndex]?.status }]
   });
   document.querySelectorAll("[data-delete]").forEach(button => button.onclick = () => {
     if (confirm("Xóa sản phẩm này khỏi danh sách tạm?")) button.closest("tr").remove();

@@ -57,7 +57,7 @@ export async function getCategories() {
           return field(style || {}, "id_loaiSP") === id && field(product, "trangThai") !== 0;
         }).length,
         styles: (raw.KIEUDANG || []).filter(style => field(style, "id_loaiSP") === id).length,
-        status: field(item, "trangThai") === 0 ? "Đã ẩn" : "Đang sử dụng",
+        status: field(item, "trangThai") === 0 ? "Đã khóa" : "Đang sử dụng",
         trangThai: Number(field(item, "trangThai") ?? 1)
       };
     });

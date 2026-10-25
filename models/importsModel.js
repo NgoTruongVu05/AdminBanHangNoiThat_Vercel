@@ -157,6 +157,7 @@ export async function getImports() {
         supplier: field(supplier || {}, "tenNhaCungCap") || "",
         count: itemDetails.length,
         status: Number(field(item, "trangThai")) === 1 ? "Đã hoàn tất" : "Đang nhập",
+        trangThai: Number(field(item, "trangThai") ?? 0),
         total
       };
     });

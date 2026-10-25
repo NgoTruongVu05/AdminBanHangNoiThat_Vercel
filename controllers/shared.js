@@ -63,7 +63,8 @@ export function bindDomSearch({
   fields = null,
   defaultKeys = ["code", "name"],
   defaultLabel = "Mã và tên",
-  getFieldValue = null
+  getFieldValue = null,
+   sideFilters = []
 } = {}) {
   const search = document.querySelector("#search");
   if (!search) return;
@@ -97,6 +98,10 @@ export function bindDomSearch({
 
   const applyFilter = query => {
     const normalized = String(query ?? "").trim().toLowerCase();
+    const sideFilterValues = (sideFilters || []).map(sf => ({
+      sf,
+      value: String(document.querySelector(sf.selector)?.value ?? "").trim()
+    }));
     let visible = 0;
     const rows = getRows();
     rows.forEach((row, domIndex) => {
@@ -110,7 +115,15 @@ export function bindDomSearch({
       } else {
         haystack = readValue(row, rowIndex, selectedField);
       }
-      const show = !normalized || String(haystack).toLowerCase().includes(normalized);
+      let show = !normalized || String(haystack).toLowerCase().includes(normalized);
+      if (show) {
+        for (const { sf, value } of sideFilterValues) {
+          if (value) {
+            const rowValue = typeof sf.getValue === "function" ? sf.getValue(row, rowIndex) : "";
+            if (String(rowValue).trim() !== value) { show = false; break; }
+          }
+        }
+      }
       row.style.display = show ? "" : "none";
       if (show) visible += 1;
     });
@@ -130,6 +143,10 @@ export function bindDomSearch({
       applyFilter(search.value);
     };
   }
+  (sideFilters || []).forEach(sf => {
+    const el = document.querySelector(sf.selector);
+    if (el) el.onchange = () => applyFilter(search.value);
+  });
   applyFilter(initialQuery ?? "");
 }
 export function showAddForm({ title, fields, onSubmit }) {

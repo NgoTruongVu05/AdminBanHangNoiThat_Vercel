@@ -39,7 +39,7 @@ export async function getStyles() {
       name: field(item, "tenKieuDang") || "",
       category: field(categories.find(entry => field(entry, "id_loaiSP") === field(item, "id_loaiSP")) || {}, "tenLoai") || "",
       categoryId: field(item, "id_loaiSP"),
-      status: field(item, "trangThai") === 0 ? "Đã ẩn" : "Đang sử dụng",
+      status: field(item, "trangThai") === 0 ? "Đã khóa" : "Đang sử dụng",
       trangThai: Number(field(item, "trangThai") ?? 1)
     }));
   });
