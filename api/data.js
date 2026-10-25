@@ -25,8 +25,8 @@ function getEnvironmentValue(name) {
 }
 
 module.exports = async function handler(request, response) {
-  if (!["GET", "POST", "PATCH"].includes(request.method)) {
-    response.setHeader("Allow", "GET, POST, PATCH");
+  if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) {
+    response.setHeader("Allow", "GET, POST, PATCH, DELETE");
     return response.status(405).json({ error: "Method Not Allowed" });
   }
 
@@ -97,6 +97,38 @@ module.exports = async function handler(request, response) {
       return response.status(200).json({ data: await tableResponse.json() });
     } catch (error) {
       console.error("Supabase update request failed:", error);
+      return response.status(502).json({ error: "Không thể ghi dữ liệu vào Supabase." });
+    }
+  }
+
+
+  if (request.method === "DELETE") {
+    const table = String(request.body?.table || "").toLowerCase();
+    const match = request.body?.match || {};
+    const tableEntry = tables.find(([name]) => name.split("?")[0] === table);
+    if (!tableEntry) {
+      return response.status(400).json({ error: "Bảng xóa không hợp lệ." });
+    }
+    try {
+      const baseUrl = url.replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
+      const query = Object.entries(match).map(([key, value]) => `${encodeURIComponent(String(key).toLowerCase())}=eq.${encodeURIComponent(value)}`).join("&");
+      const endpoint = `${tableEntry[0].split("?")[0]}?${query}`;
+      const tableResponse = await fetch(`${baseUrl}/rest/v1/${endpoint}`, {
+        method: "DELETE",
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          Prefer: "return=representation"
+        }
+      });
+      if (!tableResponse.ok) {
+        const detail = await tableResponse.text();
+        console.error("Supabase delete failed:", { table, status: tableResponse.status, detail });
+        return response.status(tableResponse.status).json({ error: "Không thể xóa dữ liệu.", detail });
+      }
+      return response.status(200).json({ data: await tableResponse.json() });
+    } catch (error) {
+      console.error("Supabase delete request failed:", error);
       return response.status(502).json({ error: "Không thể ghi dữ liệu vào Supabase." });
     }
   }

@@ -1,4 +1,4 @@
-import { bindDomSearch, money, rowActions } from "./shared.js";
+import { bindDomSearch, money, rowActions, materialIcon } from "./shared.js";
 
 const escape = value => String(value ?? "").replace(/[&<>\"']/g, character => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -51,7 +51,7 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       defaultKeys: ["id", "supplier"],
       fields: { date: "Ngày nhập", count: "Số dòng SP", status: "Trạng thái" },
       search: row => `${row.id} ${row.supplier}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td class="mono">${escape(row.date)}</td><td>${escape(row.supplier)}</td><td><span class="tag">${row.count} dòng SP</span></td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td class="mono">${escape(row.date)}</td><td>${escape(row.supplier)}</td><td><span class="tag">${row.count} dòng SP</span></td><td><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></td><td class="actions"><button type="button" class="icon-btn" title="Xem chi tiết" aria-label="Xem chi tiết" data-view-index="${index}">${materialIcon("visibility")}</button>${row.status === "Đang nhập" ? `<button type="button" class="icon-btn" title="Sửa" aria-label="Sửa" data-edit-index="${index}">${materialIcon("edit")}</button><button type="button" class="icon-btn" title="Duyệt" aria-label="Duyệt" data-approve-index="${index}">${materialIcon("check")}</button>` : ""}</td></tr>`
     },
     promotions: {
       rows: data.promotions,
@@ -112,6 +112,18 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
     document.querySelectorAll(`#${config.body} [data-lock-index]`).forEach(button => {
       const index = Number(button.dataset.lockIndex);
       button.onclick = () => options.onLock(allRows[index]);
+    });
+  }
+  if (options.onApprove) {
+    document.querySelectorAll(`#${config.body} [data-approve-index]`).forEach(button => {
+      const index = Number(button.dataset.approveIndex);
+      button.onclick = () => options.onApprove(allRows[index]);
+    });
+  }
+  if (options.onView) {
+    document.querySelectorAll(`#${config.body} [data-view-index]`).forEach(button => {
+      const index = Number(button.dataset.viewIndex);
+      button.onclick = () => options.onView(allRows[index]);
     });
   }
 }

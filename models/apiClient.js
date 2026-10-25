@@ -41,3 +41,17 @@ export async function updateRecord(table, match, record) {
   if (!response.ok) throw new Error(payload.error || `API trả về ${response.status}`);
   return payload.data;
 }
+
+export async function deleteRecord(table, match) {
+  const databaseMatch = Object.fromEntries(
+    Object.entries(match || {}).map(([name, value]) => [name.toLowerCase(), value])
+  );
+  const response = await fetch("/api/data", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ table, match: databaseMatch })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || `API trả về ${response.status}`);
+  return payload.data;
+}
