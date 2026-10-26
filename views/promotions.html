@@ -1,29 +1,94 @@
-<div class="toolbar">
-  <input class="search" id="search" placeholder="Tìm theo mã hoặc tên chương trình...">
-  <select id="promotion-filter">
-    <option value="">Tất cả trạng thái</option>
-  </select>
-  <div class="spacer"></div>
-  <button class="btn" id="add-btn"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>Thêm
-      khuyến mãi</span></button>
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+  <button class="btn" id="add-btn"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>Thêm chương trình khuyến mãi</span></button>
 </div>
-<section class="view-card">
-  <h2>Chương trình khuyến mãi</h2>
+<div class="promo-tabs">
+  <button type="button" class="promo-tab active" data-promo-tab="programs">Chương trình khuyến mãi</button>
+  <button type="button" class="promo-tab" data-promo-tab="product">Khuyến mãi theo sản phẩm</button>
+  <button type="button" class="promo-tab" data-promo-tab="invoice">Khuyến mãi theo hóa đơn</button>
+  <button type="button" class="promo-tab" data-promo-tab="voucher">Khuyến mãi theo voucher</button>
+</div>
+
+<section class="view-card promo-panel" data-promo-panel="programs">
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tên chương trình</th>
+          <th>Thời gian hiệu lực</th>
+          <th>Trạng thái</th>
+          <th>Số CTKM</th>
+        </tr>
+      </thead>
+      <tbody id="programs-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="view-card promo-panel" data-promo-panel="product" style="display:none;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;justify-content:space-between;">
+    <select id="product-program-filter"><option value="">Tất cả chương trình</option></select>
+    <button class="btn" id="add-product-promo-btn"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>Thêm CTKM</span></button>
+  </div>
   <div class="table-wrap">
     <table class="data-table">
       <thead>
         <tr>
           <th>Mã CTKM</th>
           <th>Tên chương trình</th>
-          <th>Loại khuyến mãi</th>
+          <th>Sản phẩm</th>
+          <th>Mức giảm</th>
           <th>Thời gian hiệu lực</th>
           <th>Trạng thái</th>
-          <th>Thao tác</th>
         </tr>
       </thead>
-      <tbody id="promotions-body">
-        
-      </tbody>
+      <tbody id="product-promos-body"></tbody>
     </table>
   </div>
 </section>
+
+<section class="view-card promo-panel" data-promo-panel="invoice" style="display:none;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;justify-content:space-between;">
+    <select id="invoice-program-filter"><option value="">Tất cả chương trình</option></select>
+    <button class="btn" id="add-invoice-promo-btn"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>Thêm CTKM</span></button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã CTKM</th>
+          <th>Tên chương trình</th>
+          <th>Tổng tối thiểu</th>
+          <th>Mức giảm</th>
+          <th>Thời gian hiệu lực</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody id="invoice-promos-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="view-card promo-panel" data-promo-panel="voucher" style="display:none;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;justify-content:space-between;">
+    <select id="voucher-program-filter"><option value="">Tất cả chương trình</option></select>
+    <button class="btn" id="add-voucher-promo-btn"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>Thêm CTKM</span></button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã CTKM</th>
+          <th>Tên chương trình</th>
+          <th>Mã voucher</th>
+          <th>Mức giảm</th>
+          <th>Số lượng</th>
+          <th>Thời gian hiệu lực</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody id="voucher-promos-body"></tbody>
+    </table>
+  </div>
+</section>
+
+

@@ -7,7 +7,7 @@ import { initOrders } from "./ordersController.js";
 import { initImports, openAddImport } from "./importsController.js";
 import { initSuppliers, openAddSupplier } from "./suppliersController.js";
 import { initCustomers, openAddCustomer } from "./customersController.js";
-import { initPromotions } from "./promotionsController.js";
+import { initPromotions, openAddPromotion } from "./promotionsController.js";
 import { initStaff, openAddStaff } from "./staffController.js";
 import { initAccounts } from "./accountsController.js";
 import { initStyles, openAddStyle } from "./stylesController.js";
@@ -36,7 +36,7 @@ const titles = {
 };
 const views = { dashboard: "dashboard", products: "products", categories: "categories", woods: "woods", styles: "styles", imports: "imports", suppliers: "suppliers", orders: "orders", customers: "customers", promotions: "promotions", staff: "staff", accounts: "accounts" };
 const controllers = { dashboard: initDashboard, products: initProducts, categories: initCategories, woods: initWoods, styles: initStyles, imports: initImports, suppliers: initSuppliers, orders: initOrders, customers: initCustomers, promotions: initPromotions, staff: initStaff, accounts: initAccounts };
-const addActions = { products: openAddProduct, categories: openAddCategory, woods: openAddWood, styles: openAddStyle, imports: openAddImport, suppliers: openAddSupplier, customers: openAddCustomer, staff: openAddStaff };
+const addActions = { products: openAddProduct, categories: openAddCategory, woods: openAddWood, styles: openAddStyle, imports: openAddImport, suppliers: openAddSupplier, customers: openAddCustomer, staff: openAddStaff, promotions: openAddPromotion };
 const refreshAfterAdd = () => {
   clearRemoteTableCache();
   return render();

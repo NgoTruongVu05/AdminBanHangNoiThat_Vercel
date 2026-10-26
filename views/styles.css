@@ -348,10 +348,30 @@ select {
     overflow: auto
 }
 
+.promo-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.promo-tab {
+  padding: 8px 14px;
+  border: 1px solid #e6e1d8;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #5b6b7f;
+}
+.promo-tab.active {
+  background: #8b5e3c;
+  color: #fff;
+  border-color: #8b5e3c;
+}
 .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 850px
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px
 }
 
 .data-table th {

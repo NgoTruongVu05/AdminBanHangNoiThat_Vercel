@@ -5,6 +5,7 @@ const tables = [
   ["nhacungcap", "NHACUNGCAP"], ["loaisp", "LOAISP"], ["loaigo", "LOAIGO"], ["kieudang", "KIEUDANG"],
   ["chuongtrinhkhuyenmai", "CHUONGTRINHKHUYENMAI"], ["nhanvien", "NHANVIEN"], ["khachhang", "KHACHHANG"],
   ["sanpham", "SANPHAM"], ["phieunhap", "PHIEUNHAP"], ["chitietphieunhap", "CHITIETPHIEUNHAP"], ["hoadon", "HOADON"],
+  ["kmtheosanpham", "KMTHEOSANPHAM"], ["kmtheohd", "KMTHEOHD"], ["kmtheovoucher", "KMTHEOVOUCHER"],
   ["dangnhap?select=tendangnhap,matkhau,loaitaikhoan,id_khachhang,cccd_nhanvien,trangthai", "DANGNHAP"]
 ];
 
