@@ -64,7 +64,6 @@ export async function openAddImport(existingImport = null) {
       <h2>${existingImport ? "Sửa phiếu nhập" : "Tạo phiếu nhập"}</h2>
       <div class="form-row"><label>Ngày nhập</label><input name="ngayNhap" type="date" required value="${importData ? importData.date : new Date().toISOString().slice(0, 10)}"></div>
       <div class="form-row"><label>Nhà cung cấp</label><select name="ID_nhaCungCap" required><option value="">Chọn nhà cung cấp</option>${supplierOptionsHtml}</select></div>
-      <div class="form-row"><label>Trạng thái</label><select name="trangThai" required ${existingImport ? "disabled" : ""}><option value="0" ${!importData || importData.status === 0 ? "selected" : ""}>Đang nhập</option><option value="1" ${importData && importData.status === 1 ? "selected" : ""}>Đã hoàn tất</option></select></div>
       <div class="form-row"><label>Chi tiết sản phẩm</label>
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:4px;font-weight:600;">
           <div>Sản phẩm</div>
