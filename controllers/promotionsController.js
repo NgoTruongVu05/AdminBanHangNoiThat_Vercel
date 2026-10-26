@@ -1,6 +1,6 @@
-import { getPromotions, getPrograms, getPromotionsByType, createPromotionsBulk } from "../models/promotionsModel.js";
+import { getPromotions, getPrograms, getPromotionsByType, createPromotionsBulk, updateProgram, updatePromotionRule } from "../models/promotionsModel.js";
 import { getProductOptions } from "../models/productsModel.js";
-import { escapeHtml, showAlertModal } from "./shared.js";
+import { escapeHtml, showAlertModal, showConfirmModal, showEditForm, materialIcon } from "./shared.js";
 
 const typeLabels = {
   product: "Theo sản phẩm",
@@ -58,11 +58,42 @@ async function loadAndRender() {
     body.innerHTML = programs.map(program => `
       <tr>
         <td>${escapeHtml(program.name)}</td>
-        <td>${escapeHtml(program.period)}</td>
-        <td>${escapeHtml(program.status)}</td>
+        <td>${escapeHtml(program.ngayBD)}</td>
+        <td>${escapeHtml(program.ngayKT)}</td>
+        <td><span class="tag ${Number(program.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(program.status)}</span></td>
         <td>${program.count}</td>
+        <td class="actions">
+          <button type="button" class="icon-btn" title="Xem chi tiết" aria-label="Xem chi tiết" data-view-program="${escapeHtml(program.name)}">${materialIcon("visibility")}</button>
+          <button type="button" class="icon-btn" title="Sửa chương trình" aria-label="Sửa chương trình" data-edit-program="${escapeHtml(program.name)}">${materialIcon("edit")}</button>
+          <button type="button" class="icon-btn" title="${Number(program.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-program="${escapeHtml(program.name)}" data-next-status="${Number(program.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(program.trangThai) === 0 ? "lock_open" : "lock")}</button>
+        </td>
       </tr>
     `).join("");
+    body.querySelectorAll("[data-view-program]").forEach(btn => {
+      btn.onclick = () => Promise.resolve(openViewProgram(btn.dataset.viewProgram)).catch(error => console.error(error));
+    });
+    body.querySelectorAll("[data-edit-program]").forEach(btn => {
+      btn.onclick = () => Promise.resolve(openEditProgram(btn.dataset.editProgram)).catch(error => console.error(error));
+    });
+    body.querySelectorAll("[data-toggle-program]").forEach(btn => {
+      btn.onclick = async () => {
+        const name = btn.dataset.toggleProgram;
+        const next = Number(btn.dataset.nextStatus);
+        const confirmed = await showConfirmModal(next === 0 ? "Bạn có chắc muốn khóa chương trình này?" : "Bạn có chắc muốn mở khóa chương trình này?");
+        if (!confirmed) return;
+        const programs = await getPrograms();
+        const program = programs.find(item => item.name === name);
+        if (!program) return;
+        try {
+          await updateProgram(name, { name, ngayBD: program.ngayBD, ngayKT: program.ngayKT, trangThai: next, note: program.note || "" });
+          await loadAndRender();
+          showAlertModal(next === 0 ? "Đã khóa chương trình." : "Đã mở khóa chương trình.", "success");
+        } catch (error) {
+          console.error(error);
+          showAlertModal("Không thể cập nhật trạng thái chương trình.", "error");
+        }
+      };
+    });
   }
 
   ["product", "invoice", "voucher"].forEach(type => {
@@ -93,8 +124,13 @@ async function renderTypePanel(type) {
           <td>${escapeHtml(item.name)}</td>
           <td>${escapeHtml(item.sanPham)}</td>
           <td>${escapeHtml(item.mucGiam)}</td>
-          <td>${escapeHtml(item.period)}</td>
-          <td>${escapeHtml(item.status)}</td>
+          <td>${escapeHtml(item.ngayBD)}</td>
+          <td>${escapeHtml(item.ngayKT)}</td>
+          <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
+          <td class="actions">
+            <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
+            <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
+          </td>
         </tr>
       `;
     }
@@ -105,8 +141,13 @@ async function renderTypePanel(type) {
           <td>${escapeHtml(item.name)}</td>
           <td>${escapeHtml(item.minTotal)}</td>
           <td>${escapeHtml(item.mucGiam)}</td>
-          <td>${escapeHtml(item.period)}</td>
-          <td>${escapeHtml(item.status)}</td>
+          <td>${escapeHtml(item.ngayBD)}</td>
+          <td>${escapeHtml(item.ngayKT)}</td>
+          <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
+          <td class="actions">
+            <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
+            <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
+          </td>
         </tr>
       `;
     }
@@ -117,16 +158,201 @@ async function renderTypePanel(type) {
         <td>${escapeHtml(item.maVoucher)}</td>
         <td>${escapeHtml(item.mucGiam)}</td>
         <td>${escapeHtml(item.soLuong)}</td>
-        <td>${escapeHtml(item.period)}</td>
-        <td>${escapeHtml(item.status)}</td>
+        <td>${escapeHtml(item.ngayBD)}</td>
+        <td>${escapeHtml(item.ngayKT)}</td>
+        <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
+        <td class="actions">
+          <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
+            <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
+        </td>
       </tr>
     `;
   }).join("");
+  body.querySelectorAll("[data-edit-rule]").forEach(btn => {
+    btn.onclick = () => Promise.resolve(openEditPromotionRule(btn.dataset.editRule, type)).catch(error => console.error(error));
+  });
+  body.querySelectorAll("[data-toggle-rule]").forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.toggleRule;
+      const typeKey = btn.dataset.type;
+      const typeLabel = typeLabels[typeKey];
+      const next = Number(btn.dataset.nextStatus);
+      const confirmed = await showConfirmModal(next === 0 ? "Bạn có chắc muốn khóa CTKM này?" : "Bạn có chắc muốn mở khóa CTKM này?");
+      if (!confirmed) return;
+      try {
+        await updatePromotionRule(id, typeLabel, { trangThai: next });
+        await renderTypePanel(typeKey);
+        showAlertModal(next === 0 ? "Đã khóa CTKM." : "Đã mở khóa CTKM.", "success");
+      } catch (error) {
+        console.error(error);
+        showAlertModal("Không thể cập nhật trạng thái CTKM.", "error");
+      }
+    };
+  });
 }
+
+export async function openViewProgram(programName) {
+  const promotions = await getPromotions();
+  const rules = promotions.filter(item => item.name === programName && item.type !== "(Chưa có CTKM)");
+  const programs = await getPrograms();
+  const program = programs.find(item => item.name === programName);
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+
+  const status = program?.status || "Đang áp dụng";
+  const isCompleted = Number(program?.trangThai ?? 1) === 1;
+  const rowsHtml = rules.length ? rules.map(item => `
+    <tr>
+      <td>${escapeHtml(item.id)}</td>
+      <td><span class="tag">${escapeHtml(item.type)}</span></td>
+      <td>${escapeHtml(item.detail || item.mucGiam)}</td>
+      <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
+    </tr>
+  `).join("") : `<tr><td colspan="4">Chưa có CTKM nào.</td></tr>`;
+
+  backdrop.innerHTML = `
+    <section class="modal import-detail-modal" role="dialog" aria-modal="true" aria-labelledby="promotion-detail-title">
+      <header class="import-detail-header">
+        <div class="import-detail-title-icon material-symbols-outlined" aria-hidden="true">local_offer</div>
+        <div>
+          <div class="import-detail-title-row">
+            <h2 id="promotion-detail-title">Chi tiết chương trình khuyến mãi</h2>
+            <span class="import-code">${escapeHtml(programName)}</span>
+          </div>
+          <p>Thông tin chi tiết chương trình khuyến mãi nội bộ</p>
+        </div>
+        <button type="button" class="import-detail-close" data-close aria-label="Đóng"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="import-detail-content">
+        <div class="import-summary">
+          <div class="import-summary-item">
+            <span class="import-summary-icon material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+            <div><span class="import-summary-label">TÊN CHƯƠNG TRÌNH</span><strong>${escapeHtml(programName)}</strong></div>
+          </div>
+          <div class="import-summary-item">
+            <span class="import-summary-icon material-symbols-outlined" aria-hidden="true">calendar_month</span>
+            <div><span class="import-summary-label">NGÀY BẮT ĐẦU</span><strong>${escapeHtml(program?.ngayBD || "")}</strong></div>
+          </div>
+          <div class="import-summary-item">
+            <span class="import-summary-icon material-symbols-outlined" aria-hidden="true">event</span>
+            <div><span class="import-summary-label">NGÀY KẾT THÚC</span><strong>${escapeHtml(program?.ngayKT || "")}</strong></div>
+          </div>
+          ${program?.note ? `<div class="import-summary-item">
+            <span class="import-summary-icon material-symbols-outlined" aria-hidden="true">notes</span>
+            <div><span class="import-summary-label">GHI CHÚ</span><strong>${escapeHtml(program.note)}</strong></div>
+          </div>` : ""}
+        </div>
+        <div class="import-status-banner ${isCompleted ? "import-status-completed" : "import-status-pending"}">
+          <div><span class="material-symbols-outlined" aria-hidden="true">${isCompleted ? "check_circle" : "pending"}</span><span>Trạng thái chương trình</span></div>
+          <span class="import-status"><span></span>${escapeHtml(status)}</span>
+        </div>
+        <div class="import-products-heading"><h3>DANH SÁCH CTKM</h3><span>${rules.length} CTKM</span></div>
+        <div class="import-products-table-wrap">
+          <div class="import-products-scroll">
+            <table class="import-products-table">
+              <thead><tr><th>MÃ CTKM</th><th>LOẠI</th><th>CHI TIẾT</th><th>TRẠNG THÁI</th></tr></thead>
+              <tbody>${rowsHtml || "<tr><td colspan=\"4\" class=\"import-empty\">Không có CTKM</td></tr>"}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+
+  document.body.append(backdrop);
+  const close = () => backdrop.remove();
+  backdrop.querySelector("[data-close]").onclick = close;
+  backdrop.onclick = event => { if (event.target === backdrop) close(); };
+}
+
+export async function openEditProgram(programName) {
+  const programs = await getPrograms();
+  const program = programs.find(item => item.name === programName);
+  if (!program) return;
+  showEditForm({
+    title: "Cập nhật chương trình khuyến mãi",
+    fields: [
+      { name: "tenCTKM", label: "Tên chương trình" },
+      { name: "ngayBD", label: "Ngày bắt đầu", type: "date" },
+      { name: "ngayKT", label: "Ngày kết thúc", type: "date" },
+      { name: "ghiChu", label: "Ghi chú", type: "textarea", required: false }
+    ],
+    initialValues: { tenCTKM: program.name, ngayBD: program.ngayBD, ngayKT: program.ngayKT, ghiChu: program.note || "" },
+    onSubmit: data => {
+      if (!String(data.tenCTKM || "").trim()) throw new Error("Tên chương trình không được để trống.");
+      if (!data.ngayBD || !data.ngayKT) throw new Error("Vui lòng chọn ngày bắt đầu và ngày kết thúc.");
+      if (new Date(data.ngayBD) > new Date(data.ngayKT)) throw new Error("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.");
+      return updateProgram(programName, {
+        name: String(data.tenCTKM).trim(),
+        ngayBD: data.ngayBD,
+        ngayKT: data.ngayKT,
+        note: String(data.ghiChu || "").trim()
+      });
+    }
+  });
+}
+
+export async function openEditPromotionRule(id, typeKey) {
+  const type = typeLabels[typeKey];
+  const promotions = await getPromotions();
+  const item = promotions.find(promotion => String(promotion.id) === String(id));
+  if (!item) return;
+
+  if (typeKey === "product") {
+    showEditForm({
+      title: "Cập nhật CTKM theo sản phẩm",
+      fields: [
+        { name: "phanTram", label: "Mức giảm (%)", type: "text" }
+      ],
+      initialValues: { phanTram: item.phanTram },
+      onSubmit: data => {
+        const phanTram = Number(data.phanTram);
+        if (!Number.isFinite(phanTram) || phanTram <= 0) throw new Error("Mức giảm phải là số lớn hơn 0.");
+        return updatePromotionRule(id, type, { phanTram });
+      }
+    });
+    return;
+  }
+
+  if (typeKey === "invoice") {
+    showEditForm({
+      title: "Cập nhật CTKM theo hóa đơn",
+      fields: [
+        { name: "phanTram", label: "Mức giảm (%)", type: "text" }
+      ],
+      initialValues: { phanTram: item.phanTram },
+      onSubmit: data => {
+        const phanTram = Number(data.phanTram);
+        if (!Number.isFinite(phanTram) || phanTram <= 0) throw new Error("Mức giảm phải là số lớn hơn 0.");
+        return updatePromotionRule(id, type, { phanTram });
+      }
+    });
+    return;
+  }
+
+  showEditForm({
+    title: "Cập nhật CTKM theo voucher",
+    fields: [
+      { name: "phanTram", label: "Mức giảm (%)", type: "text" },
+      { name: "soLuong", label: "Số lượng", type: "text" }
+    ],
+    initialValues: { phanTram: item.phanTram, soLuong: item.soLuong },
+    onSubmit: data => {
+      const phanTram = Number(data.phanTram);
+      const soLuong = Number(data.soLuong);
+      if (!Number.isFinite(phanTram) || phanTram <= 0) throw new Error("Mức giảm phải là số lớn hơn 0.");
+      if (!Number.isFinite(soLuong) || soLuong <= 0) throw new Error("Số lượng phải là số lớn hơn 0.");
+      return updatePromotionRule(id, type, { phanTram, soLuong });
+    }
+  });
+}
+
 
 export async function openAddPromotion(fixedType = null) {
   const products = await getProductOptions();
-  const programs = fixedType ? (await getPrograms()).filter(program => Number(program.trangThai) === 1) : [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const programs = fixedType ? (await getPrograms()).filter(program => Number(program.trangThai) === 1 && new Date(program.ngayKT) >= today) : [];
   const programSelectOptions = programs.map(program => `<option value="${escapeHtml(program.name)}">${escapeHtml(program.name)} (${escapeHtml(program.period)})</option>`).join("");
   if (fixedType && !programs.length) {
     showAlertModal("Không có chương trình khuyến mãi đang hiệu lực.", "warning");
@@ -148,9 +374,10 @@ export async function openAddPromotion(fixedType = null) {
             <label>Tên chương trình<input name="name" required></label>
             <label>Ngày bắt đầu<input name="ngayBD" type="date" required></label>
             <label>Ngày kết thúc<input name="ngayKT" type="date" required></label>
+            <label>Ghi chú<textarea name="ghiChu" rows="2" style="width:100%;"></textarea></label>
             <label>Trạng thái<select name="trangThai">
               <option value="1">Đang áp dụng</option>
-              <option value="0">Đã tắt</option>
+              <option value="0">Đã khóa</option>
             </select></label>
           `}
         </div>
@@ -301,6 +528,7 @@ export async function openAddPromotion(fixedType = null) {
     let ngayBD = "";
     let ngayKT = "";
     let trangThai = 1;
+    let note = "";
 
     if (fixedType) {
       const programName = String(formData.get("programName") || "").trim();
@@ -313,18 +541,24 @@ export async function openAddPromotion(fixedType = null) {
       ngayBD = program.ngayBD;
       ngayKT = program.ngayKT;
       trangThai = Number(program.trangThai ?? 1);
+      note = program.note || "";
     } else {
       name = String(formData.get("name") || "").trim();
       ngayBD = formData.get("ngayBD");
       ngayKT = formData.get("ngayKT");
       trangThai = Number(formData.get("trangThai"));
+      note = String(formData.get("ghiChu") || "").trim();
       if (!name || !ngayBD || !ngayKT) {
         showAlertModal("Vui lòng nhập đầy đủ thông tin chương trình.", "warning");
         return;
       }
+      if (new Date(ngayBD) > new Date(ngayKT)) {
+        showAlertModal("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.", "warning");
+        return;
+      }
     }
 
-    if (!rules.length) {
+    if (fixedType && !rules.length) {
       showAlertModal("Vui lòng thêm ít nhất một CTKM.", "warning");
       return;
     }
@@ -334,37 +568,54 @@ export async function openAddPromotion(fixedType = null) {
     try {
       const rulePayloads = rules.map(rule => {
         if (rule.type === "product") {
-          if (!rule.id_sanPham || !rule.mucGiam) {
-            throw new Error("Vui lòng chọn sản phẩm và mức giảm.");
+          const mucGiam = Number(rule.mucGiam);
+          if (!rule.id_sanPham) {
+            throw new Error("Vui lòng chọn sản phẩm.");
+          }
+          if (!Number.isFinite(mucGiam) || mucGiam <= 0) {
+            throw new Error("Mức giảm phải là số lớn hơn 0.");
           }
           return {
             type: "Theo sản phẩm",
             id_sanPham: rule.id_sanPham,
-            phanTram: rule.mucGiam
+            phanTram: mucGiam
           };
         }
         if (rule.type === "invoice") {
-          if (!rule.minTotal || !rule.mucGiam) {
-            throw new Error("Vui lòng nhập tổng tối thiểu và mức giảm.");
+          const minTotal = Number(rule.minTotal);
+          const mucGiam = Number(rule.mucGiam);
+          if (!Number.isFinite(minTotal) || minTotal <= 0) {
+            throw new Error("Tổng tiền tối thiểu phải là số lớn hơn 0.");
+          }
+          if (!Number.isFinite(mucGiam) || mucGiam <= 0) {
+            throw new Error("Mức giảm phải là số lớn hơn 0.");
           }
           return {
             type: "Theo hóa đơn",
-            minTotal: rule.minTotal,
-            phanTram: rule.mucGiam
+            minTotal,
+            phanTram: mucGiam
           };
         }
-        if (!rule.maVoucher || !rule.mucGiam) {
-          throw new Error("Vui lòng nhập mã voucher và mức giảm.");
+        const mucGiam = Number(rule.mucGiam);
+        const soLuong = Number(rule.soLuong);
+        if (!rule.maVoucher) {
+          throw new Error("Vui lòng nhập mã voucher.");
+        }
+        if (!Number.isFinite(mucGiam) || mucGiam <= 0) {
+          throw new Error("Mức giảm phải là số lớn hơn 0.");
+        }
+        if (!Number.isFinite(soLuong) || soLuong <= 0) {
+          throw new Error("Số lượng phải là số lớn hơn 0.");
         }
         return {
           type: "Theo voucher",
           maVoucher: rule.maVoucher,
-          phanTram: rule.mucGiam,
-          soLuong: rule.soLuong
+          phanTram: mucGiam,
+          soLuong
         };
       });
 
-      await createPromotionsBulk({ name, ngayBD, ngayKT, trangThai }, rulePayloads);
+      await createPromotionsBulk({ name, ngayBD, ngayKT, trangThai, note }, rulePayloads);
       showAlertModal(fixedType ? "Đã thêm CTKM vào chương trình." : "Đã thêm chương trình khuyến mãi.", "success");
       close();
       document.dispatchEvent(new CustomEvent("data-added"));

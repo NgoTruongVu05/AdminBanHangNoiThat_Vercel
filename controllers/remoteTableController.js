@@ -61,7 +61,7 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       body: "promotions-body",
       defaultKeys: ["id", "name"],
       fields: { type: "Loại", period: "Thời gian" },
-      sideFilter: { selector: "#promotion-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đã tắt", "Đang áp dụng"] },
+      sideFilter: { selector: "#promotion-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đã khóa", "Đang áp dụng"] },
       search: row => `${row.id} ${row.name}`,
       render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td><span class="tag">${escape(row.type)}</span></td><td class="mono">${escape(row.period)}</td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>`
     },
