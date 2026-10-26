@@ -63,9 +63,9 @@ async function loadAndRender() {
         <td><span class="tag ${Number(program.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(program.status)}</span></td>
         <td>${program.count}</td>
         <td class="actions">
-          <button type="button" class="icon-btn" title="Xem chi tiết" aria-label="Xem chi tiết" data-view-program="${escapeHtml(program.name)}">${materialIcon("visibility")}</button>
-          <button type="button" class="icon-btn" title="Sửa chương trình" aria-label="Sửa chương trình" data-edit-program="${escapeHtml(program.name)}">${materialIcon("edit")}</button>
-          <button type="button" class="icon-btn" title="${Number(program.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-program="${escapeHtml(program.name)}" data-next-status="${Number(program.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(program.trangThai) === 0 ? "lock_open" : "lock")}</button>
+          <button type="button" class="icon-btn" title="Xem chi tiết" aria-label="Xem chi tiết" data-view-program="${escapeHtml(program.id)}">${materialIcon("visibility")}</button>
+          <button type="button" class="icon-btn" title="Sửa chương trình" aria-label="Sửa chương trình" data-edit-program="${escapeHtml(program.id)}">${materialIcon("edit")}</button>
+          <button type="button" class="icon-btn" title="${Number(program.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-program="${escapeHtml(program.id)}" data-next-status="${Number(program.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(program.trangThai) === 0 ? "lock_open" : "lock")}</button>
         </td>
       </tr>
     `).join("");
@@ -77,15 +77,15 @@ async function loadAndRender() {
     });
     body.querySelectorAll("[data-toggle-program]").forEach(btn => {
       btn.onclick = async () => {
-        const name = btn.dataset.toggleProgram;
+        const programId = btn.dataset.toggleProgram;
         const next = Number(btn.dataset.nextStatus);
         const confirmed = await showConfirmModal(next === 0 ? "Bạn có chắc muốn khóa chương trình này?" : "Bạn có chắc muốn mở khóa chương trình này?");
         if (!confirmed) return;
         const programs = await getPrograms();
-        const program = programs.find(item => item.name === name);
+        const program = programs.find(item => String(item.id) === String(programId));
         if (!program) return;
         try {
-          await updateProgram(name, { name, ngayBD: program.ngayBD, ngayKT: program.ngayKT, trangThai: next, note: program.note || "" });
+          await updateProgram(programId, { name: program.name, ngayBD: program.ngayBD, ngayKT: program.ngayKT, trangThai: next, note: program.note || "" });
           await loadAndRender();
           showAlertModal(next === 0 ? "Đã khóa chương trình." : "Đã mở khóa chương trình.", "success");
         } catch (error) {
@@ -101,7 +101,7 @@ async function loadAndRender() {
     if (!select) return;
     const current = select.value;
     select.innerHTML = `<option value="">Tất cả chương trình</option>` +
-      programs.map(program => `<option value="${escapeHtml(program.name)}">${escapeHtml(program.name)}</option>`).join("");
+      programs.map(program => `<option value="${escapeHtml(program.id)}">${escapeHtml(program.name)}</option>`).join("");
     select.value = current;
   });
 
@@ -191,11 +191,12 @@ async function renderTypePanel(type) {
   });
 }
 
-export async function openViewProgram(programName) {
+export async function openViewProgram(programId) {
   const promotions = await getPromotions();
-  const rules = promotions.filter(item => item.name === programName && item.type !== "(Chưa có CTKM)");
+  const rules = promotions.filter(item => String(item.programId) === String(programId) && item.type !== "(Chưa có CTKM)");
   const programs = await getPrograms();
-  const program = programs.find(item => item.name === programName);
+  const program = programs.find(item => String(item.id) === String(programId));
+  const programName = program ? program.name : programId;
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";
@@ -266,9 +267,9 @@ export async function openViewProgram(programName) {
   backdrop.onclick = event => { if (event.target === backdrop) close(); };
 }
 
-export async function openEditProgram(programName) {
+export async function openEditProgram(programId) {
   const programs = await getPrograms();
-  const program = programs.find(item => item.name === programName);
+  const program = programs.find(item => String(item.id) === String(programId));
   if (!program) return;
   showEditForm({
     title: "Cập nhật chương trình khuyến mãi",
@@ -283,7 +284,7 @@ export async function openEditProgram(programName) {
       if (!String(data.tenCTKM || "").trim()) throw new Error("Tên chương trình không được để trống.");
       if (!data.ngayBD || !data.ngayKT) throw new Error("Vui lòng chọn ngày bắt đầu và ngày kết thúc.");
       if (new Date(data.ngayBD) > new Date(data.ngayKT)) throw new Error("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.");
-      return updateProgram(programName, {
+      return updateProgram(programId, {
         name: String(data.tenCTKM).trim(),
         ngayBD: data.ngayBD,
         ngayKT: data.ngayKT,
@@ -353,7 +354,7 @@ export async function openAddPromotion(fixedType = null) {
   const products = await getProductOptions();
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const programs = fixedType ? (await getPrograms()).filter(program => Number(program.trangThai) === 1 && new Date(program.ngayKT) >= today) : [];
-  const programSelectOptions = programs.map(program => `<option value="${escapeHtml(program.name)}">${escapeHtml(program.name)} (${escapeHtml(program.period)})</option>`).join("");
+  const programSelectOptions = programs.map(program => `<option value="${escapeHtml(program.id)}">${escapeHtml(program.name)} (${escapeHtml(program.period)})</option>`).join("");
   if (fixedType && !programs.length) {
     showAlertModal("Không có chương trình khuyến mãi đang hiệu lực.", "warning");
     return;
@@ -529,10 +530,11 @@ export async function openAddPromotion(fixedType = null) {
     let ngayKT = "";
     let trangThai = 1;
     let note = "";
+    let selectedProgramId = null;
 
     if (fixedType) {
-      const programName = String(formData.get("programName") || "").trim();
-      const program = programs.find(item => item.name === programName);
+      const programId = String(formData.get("programName") || "").trim();
+      const program = programs.find(item => String(item.id) === programId);
       if (!program) {
         showAlertModal("Vui lòng chọn chương trình khuyến mãi.", "warning");
         return;
@@ -542,6 +544,7 @@ export async function openAddPromotion(fixedType = null) {
       ngayKT = program.ngayKT;
       trangThai = Number(program.trangThai ?? 1);
       note = program.note || "";
+      selectedProgramId = program.id;
     } else {
       name = String(formData.get("name") || "").trim();
       ngayBD = formData.get("ngayBD");
@@ -615,7 +618,7 @@ export async function openAddPromotion(fixedType = null) {
         };
       });
 
-      await createPromotionsBulk({ name, ngayBD, ngayKT, trangThai, note }, rulePayloads);
+      await createPromotionsBulk({ name, ngayBD, ngayKT, trangThai, note, id: selectedProgramId }, rulePayloads);
       showAlertModal(fixedType ? "Đã thêm CTKM vào chương trình." : "Đã thêm chương trình khuyến mãi.", "success");
       close();
       document.dispatchEvent(new CustomEvent("data-added"));
