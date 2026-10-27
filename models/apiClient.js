@@ -21,7 +21,7 @@ export async function insertRecord(table, record) {
     body: JSON.stringify({ table, record: databaseRecord })
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || `API trả về ${response.status}`);
+  if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
   return payload.data;
 }
 
@@ -38,7 +38,7 @@ export async function updateRecord(table, match, record) {
     body: JSON.stringify({ table, record: databaseRecord, match: databaseMatch })
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || `API trả về ${response.status}`);
+  if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
   return payload.data;
 }
 
@@ -52,6 +52,6 @@ export async function deleteRecord(table, match) {
     body: JSON.stringify({ table, match: databaseMatch })
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || `API trả về ${response.status}`);
+  if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
   return payload.data;
 }

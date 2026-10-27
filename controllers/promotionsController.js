@@ -120,7 +120,7 @@ async function renderTypePanel(type) {
     if (type === "product") {
       return `
         <tr>
-          <td>${escapeHtml(item.id)}</td>
+          <td>${escapeHtml(item.programId || item.id)}</td>
           <td>${escapeHtml(item.name)}</td>
           <td>${escapeHtml(item.sanPham)}</td>
           <td>${escapeHtml(item.mucGiam)}</td>
@@ -205,7 +205,7 @@ export async function openViewProgram(programId) {
   const isCompleted = Number(program?.trangThai ?? 1) === 1;
   const rowsHtml = rules.length ? rules.map(item => `
     <tr>
-      <td>${escapeHtml(item.id)}</td>
+      <td>${escapeHtml(item.programId || item.id)}</td>
       <td><span class="tag">${escapeHtml(item.type)}</span></td>
       <td>${escapeHtml(item.detail || item.mucGiam)}</td>
       <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
@@ -354,7 +354,19 @@ export async function openAddPromotion(fixedType = null) {
   const products = await getProductOptions();
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const programs = fixedType ? (await getPrograms()).filter(program => Number(program.trangThai) === 1 && new Date(program.ngayKT) >= today) : [];
-  const programSelectOptions = programs.map(program => `<option value="${escapeHtml(program.id)}">${escapeHtml(program.name)} (${escapeHtml(program.period)})</option>`).join("");
+  let selectedProgramId = programs[0]?.id || null;
+  const promotions = fixedType ? await getPromotions() : [];
+  const programProductIds = new Map();
+  if (fixedType) {
+    promotions.forEach(promotion => {
+      if (promotion.type !== "Theo sản phẩm") return;
+      const ids = String(promotion.sanPhamId || "").split(",").map(value => value.trim()).filter(Boolean);
+      const programId = String(promotion.programId || "");
+      if (!programProductIds.has(programId)) programProductIds.set(programId, new Set());
+      ids.forEach(id => programProductIds.get(programId).add(id));
+    });
+  }
+  const programSelectOptions = programs.map((program, index) => `<option value="${escapeHtml(program.id)}" ${index === 0 ? "selected" : ""}>${escapeHtml(program.name)} (${escapeHtml(program.period)})</option>`).join("");
   if (fixedType && !programs.length) {
     showAlertModal("Không có chương trình khuyến mãi đang hiệu lực.", "warning");
     return;
@@ -400,6 +412,41 @@ export async function openAddPromotion(fixedType = null) {
   const container = backdrop.querySelector("#rules-container");
   const addRuleButton = backdrop.querySelector("#add-rule-btn");
 
+  const programSelect = fixedType ? backdrop.querySelector('select[name="programName"]') : null;
+  if (programSelect) {
+    programSelect.addEventListener("change", () => {
+      selectedProgramId = programSelect.value || null;
+      rules.forEach(rule => {
+        if (rule.type === "product") {
+          rule.id_sanPham = "";
+          if (rule._productSelect) rule._productSelect.value = "";
+        }
+      });
+      refreshProductOptions();
+    });
+  }
+
+  function refreshProductOptions() {
+    rules.forEach(rule => {
+      if (rule.type !== "product" || !rule._productSelect) return;
+      const current = rule._productSelect.value;
+      const usedProductIds = new Set(programProductIds.get(String(selectedProgramId || "")) || []);
+      rules.forEach(item => {
+        if (item !== rule && item.type === "product" && item.id_sanPham) usedProductIds.add(String(item.id_sanPham));
+      });
+      rule._productSelect.innerHTML = `<option value="">Chọn sản phẩm</option>` +
+        products
+          .filter(product => !usedProductIds.has(String(product.value)) || String(product.value) === String(current))
+          .map(product => `<option value="${product.value}">${escapeHtml(product.label)}</option>`).join("");
+      if ([...rule._productSelect.options].some(option => option.value === current)) {
+        rule._productSelect.value = current;
+      } else {
+        rule.id_sanPham = "";
+        rule._productSelect.value = "";
+      }
+    });
+  }
+
   function addRule(type = fixedType || "product") {
     if (fixedType) type = fixedType;
     const rule = { type };
@@ -428,6 +475,7 @@ export async function openAddPromotion(fixedType = null) {
       const index = rules.indexOf(rule);
       if (index >= 0) rules.splice(index, 1);
       card.remove();
+      refreshProductOptions();
     };
 
     if (typeSelect) card.append(typeSelect);
@@ -438,10 +486,20 @@ export async function openAddPromotion(fixedType = null) {
       fields.innerHTML = "";
       if (rule.type === "product") {
         const productSelect = document.createElement("select");
+        const usedProductIds = new Set(programProductIds.get(String(selectedProgramId || "")) || []);
+        rules.forEach(item => {
+          if (item !== rule && item.type === "product" && item.id_sanPham) usedProductIds.add(String(item.id_sanPham));
+        });
         productSelect.innerHTML = `<option value="">Chọn sản phẩm</option>` +
-          products.map(product => `<option value="${product.value}">${escapeHtml(product.label)}</option>`).join("");
+          products
+            .filter(product => !usedProductIds.has(String(product.value)) || String(product.value) === String(rule.id_sanPham || ""))
+            .map(product => `<option value="${product.value}">${escapeHtml(product.label)}</option>`).join("");
         productSelect.value = rule.id_sanPham || "";
-        productSelect.onchange = event => { rule.id_sanPham = event.target.value; };
+        rule._productSelect = productSelect;
+        productSelect.onchange = event => {
+          rule.id_sanPham = event.target.value;
+          refreshProductOptions();
+        };
 
         const productLabel = document.createElement("label");
         productLabel.textContent = "Sản phẩm";
@@ -512,10 +570,12 @@ export async function openAddPromotion(fixedType = null) {
       typeSelect.onchange = event => {
         rule.type = event.target.value;
         renderFields();
+        refreshProductOptions();
       };
     }
 
     renderFields();
+    refreshProductOptions();
   }
 
   addRuleButton.onclick = () => addRule(fixedType || "product");
@@ -530,7 +590,7 @@ export async function openAddPromotion(fixedType = null) {
     let ngayKT = "";
     let trangThai = 1;
     let note = "";
-    let selectedProgramId = null;
+    selectedProgramId = programs[0]?.id || null;
 
     if (fixedType) {
       const programId = String(formData.get("programName") || "").trim();

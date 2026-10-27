@@ -77,18 +77,21 @@ export async function getPromotions() {
           const productName = product ? (field(product, "tenSanPham") || field(row, "id_sanPham")) : field(row, "id_sanPham");
           return { productName, phanTram: field(row, "phanTram"), id_sanPham: field(row, "id_sanPham") };
         });
-        mapped.push({
-          ...base,
-          id,
-          type: "Theo sản phẩm",
-          detail: productDetails.map(p => `Sản phẩm: ${p.productName}; Mức giảm: ${p.phanTram}%`).join("; "),
-          sanPham: productDetails.map(p => p.productName).join(", "),
-          sanPhamId: productDetails.map(p => p.id_sanPham).join(", "),
-          mucGiam: productDetails.map(p => `${p.phanTram}%`).join(", "),
-          phanTram: productDetails.map(p => p.phanTram).join(", "),
-          minTotal: "",
-          maVoucher: "",
-          soLuong: ""
+        productDetails.forEach(detail => {
+          mapped.push({
+            ...base,
+            id: `${id}::${detail.id_sanPham}`,
+            programId: id,
+            type: "Theo sản phẩm",
+            detail: `Sản phẩm: ${detail.productName}; Mức giảm: ${detail.phanTram}%`,
+            sanPham: detail.productName,
+            sanPhamId: detail.id_sanPham,
+            mucGiam: `${detail.phanTram}%`,
+            phanTram: detail.phanTram,
+            minTotal: "",
+            maVoucher: "",
+            soLuong: ""
+          });
         });
       }
       if (invoiceRows.length) {
@@ -242,6 +245,22 @@ export async function createPromotionsBulk(program, rules) {
     return [{ id_maCTKM: programId }];
   }
 
+  // Validate rule inputs before writing to avoid partial updates.
+  const productRuleIds = rules
+    .filter(rule => rule.type === "Theo sản phẩm")
+    .map(rule => toNumber(rule.id_sanPham) || null);
+  if (productRuleIds.some(id => !id)) throw new Error("Vui lòng chọn sản phẩm.");
+  if (productRuleIds.some((id, index) => productRuleIds.indexOf(id) !== index)) {
+    throw new Error("Mỗi sản phẩm chỉ được thêm một lần trong cùng chương trình.");
+  }
+  const voucherRuleIds = rules
+    .filter(rule => rule.type !== "Theo sản phẩm" && rule.type !== "Theo hóa đơn")
+    .map(rule => String(rule.maVoucher || "").trim());
+  if (voucherRuleIds.some(id => !id)) throw new Error("Vui lòng nhập mã voucher.");
+  if (voucherRuleIds.some((id, index) => voucherRuleIds.indexOf(id) !== index)) {
+    throw new Error("Mỗi mã voucher chỉ được thêm một lần trong cùng chương trình.");
+  }
+
   if (!exists) {
     await insertRecord("CHUONGTRINHKHUYENMAI", {
       id_maCTKM: programId,
@@ -263,14 +282,29 @@ export async function createPromotionsBulk(program, rules) {
     });
   }
 
+  const rawRules = await fetchTables(["KMTHEOSANPHAM", "KMTHEOVOUCHER"]);
+  const existingProductRows = (rawRules.KMTHEOSANPHAM || []).filter(row => field(row, "id_maCTKM") === programId);
+  const existingVoucherRows = (rawRules.KMTHEOVOUCHER || []).filter(row => field(row, "id_maCTKM") === programId);
+  const seenProducts = new Set();
+  const seenVouchers = new Set();
+
   for (const rule of rules) {
     const phanTram = toNumber(rule.phanTram);
     if (rule.type === "Theo sản phẩm") {
-      await insertRecord("KMTHEOSANPHAM", {
-        id_maCTKM: programId,
-        phanTram,
-        id_sanPham: toNumber(rule.id_sanPham) || null
-      });
+      const productId = toNumber(rule.id_sanPham) || null;
+      if (!productId) throw new Error("Vui lòng chọn sản phẩm.");
+      if (seenProducts.has(productId)) throw new Error("Mỗi sản phẩm chỉ được thêm một lần trong cùng chương trình.");
+      seenProducts.add(productId);
+      const existingProduct = existingProductRows.find(row => toNumber(field(row, "id_sanPham")) === productId);
+      if (existingProduct) {
+        await updateRecord("KMTHEOSANPHAM", { id_maCTKM: programId, id_sanPham: productId }, { phanTram });
+      } else {
+        await insertRecord("KMTHEOSANPHAM", {
+          id_maCTKM: programId,
+          phanTram,
+          id_sanPham: productId
+        });
+      }
     } else if (rule.type === "Theo hóa đơn") {
       await insertRecord("KMTHEOHD", {
         id_maCTKM: programId,
@@ -278,12 +312,24 @@ export async function createPromotionsBulk(program, rules) {
         phanTram
       });
     } else {
-      await insertRecord("KMTHEOVOUCHER", {
-        id_voucher: rule.maVoucher || `VC${programId}`,
-        id_maCTKM: programId,
-        phanTram,
-        soLuong: toNumber(rule.soLuong)
-      });
+      const voucherId = String(rule.maVoucher || "").trim();
+      if (!voucherId) throw new Error("Vui lòng nhập mã voucher.");
+      if (seenVouchers.has(voucherId)) throw new Error("Mỗi mã voucher chỉ được thêm một lần trong cùng chương trình.");
+      seenVouchers.add(voucherId);
+      const existingVoucher = existingVoucherRows.find(row => String(field(row, "id_voucher")) === voucherId);
+      if (existingVoucher) {
+        await updateRecord("KMTHEOVOUCHER", { id_maCTKM: programId, id_voucher: voucherId }, {
+          phanTram,
+          soLuong: toNumber(rule.soLuong)
+        });
+      } else {
+        await insertRecord("KMTHEOVOUCHER", {
+          id_voucher: voucherId,
+          id_maCTKM: programId,
+          phanTram,
+          soLuong: toNumber(rule.soLuong)
+        });
+      }
     }
   }
 
@@ -311,10 +357,15 @@ export async function updatePromotionStatus(id, trangThai) {
 }
 export async function updatePromotionRule(id, type, data) {
   let programId = id;
+  let productId = null;
   if (type === "Theo hóa đơn") {
     const raw = await fetchTables(["KMTHEOHD"]);
     const invoiceRow = (raw.KMTHEOHD || []).find(row => String(field(row, "ID_KM_HD")) === String(id));
     if (invoiceRow) programId = field(invoiceRow, "id_maCTKM");
+  } else if (type === "Theo sản phẩm" && String(id).includes("::")) {
+    const parts = String(id).split("::");
+    programId = parts[0];
+    productId = parts[1];
   }
 
   const payload = {};
@@ -326,7 +377,8 @@ export async function updatePromotionRule(id, type, data) {
   if (type === "Theo sản phẩm") {
     const payload = {};
     if (data.phanTram !== undefined) payload.phanTram = data.phanTram;
-    if (Object.keys(payload).length) await updateRecord("KMTHEOSANPHAM", { id_maCTKM: id }, payload);
+    const match = productId ? { id_maCTKM: programId, id_sanPham: productId } : { id_maCTKM: programId };
+    if (Object.keys(payload).length) await updateRecord("KMTHEOSANPHAM", match, payload);
   } else if (type === "Theo hóa đơn") {
     const payload = {};
     if (data.phanTram !== undefined) payload.phanTram = data.phanTram;
