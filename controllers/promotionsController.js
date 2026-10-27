@@ -207,13 +207,14 @@ export async function openViewProgram(programId) {
     <tr>
       <td>${escapeHtml(item.programId || item.id)}</td>
       <td><span class="tag">${escapeHtml(item.type)}</span></td>
-      <td>${escapeHtml(item.detail || item.mucGiam)}</td>
+      <td>${escapeHtml(item.detail || "")}</td>
+      <td>${escapeHtml(item.mucGiam || "")}</td>
       <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
     </tr>
-  `).join("") : `<tr><td colspan="4">Chưa có CTKM nào.</td></tr>`;
+  `).join("") : `<tr><td colspan="5">Chưa có CTKM nào.</td></tr>`;
 
   backdrop.innerHTML = `
-    <section class="modal import-detail-modal" role="dialog" aria-modal="true" aria-labelledby="promotion-detail-title">
+    <section class="modal import-detail-modal promotion-detail-modal" role="dialog" aria-modal="true" aria-labelledby="promotion-detail-title">
       <header class="import-detail-header">
         <div class="import-detail-title-icon material-symbols-outlined" aria-hidden="true">local_offer</div>
         <div>
@@ -252,8 +253,8 @@ export async function openViewProgram(programId) {
         <div class="import-products-table-wrap">
           <div class="import-products-scroll">
             <table class="import-products-table">
-              <thead><tr><th>MÃ CTKM</th><th>LOẠI</th><th>CHI TIẾT</th><th>TRẠNG THÁI</th></tr></thead>
-              <tbody>${rowsHtml || "<tr><td colspan=\"4\" class=\"import-empty\">Không có CTKM</td></tr>"}</tbody>
+              <thead><tr><th>MÃ CTKM</th><th>LOẠI</th><th>CHI TIẾT</th><th>MỨC GIẢM</th><th>TRẠNG THÁI</th></tr></thead>
+              <tbody>${rowsHtml || "<tr><td colspan=\"5\" class=\"import-empty\">Không có CTKM</td></tr>"}</tbody>
             </table>
           </div>
         </div>
