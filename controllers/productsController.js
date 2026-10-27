@@ -3,7 +3,7 @@ import { getProducts, createProduct, updateProduct, updateProductStatus } from "
 import { getProductCategoryOptions } from "../models/categoriesModel.js";
 import { getWoodOptions } from "../models/woodsModel.js";
 import { getStyleOptions } from "../models/stylesModel.js";
-import { uploadImage } from "../models/storageModel.js";
+import { uploadImage, deleteImage } from "../models/storageModel.js";
 
 export async function openAddProduct() {
   const [categories, woods, styles] = await Promise.all([getProductCategoryOptions(), getWoodOptions(), getStyleOptions()]);
@@ -63,8 +63,19 @@ export async function openEditProduct(product) {
         donGia: price,
         moTa: data.moTa || null
       };
+      const hasNewImage = data.hinhAnh instanceof File && data.hinhAnh.size > 0;
+      const oldImageUrl = product.image;
+      if (oldImageUrl && hasNewImage) {
+        try {
+          await deleteImage(oldImageUrl);
+        } catch (deleteError) {
+          console.warn("Không thể xóa ảnh cũ:", deleteError);
+        }
+      }
       const imageUrl = await uploadImage(data.hinhAnh);
-      if (imageUrl) update.hinhAnh = imageUrl;
+      if (imageUrl) {
+        update.hinhAnh = imageUrl;
+      }
       return updateProduct(product.rawId, update);
     }
   });
