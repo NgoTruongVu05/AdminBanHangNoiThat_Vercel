@@ -34,11 +34,16 @@ export async function updateCustomerStatus(id, trangThai) {
 
 export async function getCustomers() {
   return cached("customers", async () => {
-    const raw = await fetchTables(["KHACHHANG", "DANGNHAP"]);
+    const raw = await fetchTables(["KHACHHANG", "DANGNHAP", "HOADON"]);
     const accounts = raw.DANGNHAP || [];
+    const orders = raw.HOADON || [];
     return (raw.KHACHHANG || []).map(item => {
       const account = accounts.find(entry =>
         String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang"))
+      );
+      const customerOrders = orders.filter(entry =>
+        String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang")) &&
+        Number(field(entry, "trangThai") ?? 0) === 2
       );
       const trangThai = Number(field(account || {}, "trangThai") ?? 1);
       return {
@@ -47,8 +52,8 @@ export async function getCustomers() {
         name: field(item, "hoTen") || "",
         phone: field(item, "SDT") || field(item, "sdt") || "",
         email: field(item, "email") || "",
-        orders: 0,
-        spending: 0,
+        orders: customerOrders.length,
+        spending: customerOrders.reduce((sum, entry) => sum + Number(field(entry, "tongTien") || 0), 0),
         status: trangThai === 0 ? "Bị khóa" : "Đang hoạt động",
         trangThai
       };

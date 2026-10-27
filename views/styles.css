@@ -929,6 +929,23 @@ select {
     color: #008d69;
 }
 
+.import-status-canceled {
+    border-color: #f4c6c6;
+    background: #fff5f5;
+    color: #a61b1b;
+}
+
+.import-status-canceled .import-status {
+    border-color: #f0b3b3;
+    background: #ffe1e1;
+    color: #a61b1b;
+}
+
+.import-status-canceled .import-status span {
+    background: #d93025;
+}
+
+
 .import-products-heading {
     flex: 0 0 auto;
     display: flex;
