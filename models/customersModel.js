@@ -34,9 +34,10 @@ export async function updateCustomerStatus(id, trangThai) {
 
 export async function getCustomers() {
   return cached("customers", async () => {
-    const raw = await fetchTables(["KHACHHANG", "DANGNHAP", "HOADON"]);
+    const raw = await fetchTables(["KHACHHANG", "DANGNHAP", "HOADON", "DIACHIGIAOHANG"]);
     const accounts = raw.DANGNHAP || [];
     const orders = raw.HOADON || [];
+    const addresses = raw.DIACHIGIAOHANG || [];
     return (raw.KHACHHANG || []).map(item => {
       const account = accounts.find(entry =>
         String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang"))
@@ -44,6 +45,12 @@ export async function getCustomers() {
       const customerOrders = orders.filter(entry =>
         String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang")) &&
         Number(field(entry, "trangThai") ?? 0) === 2
+      );
+      const defaultAddress = addresses.find(entry =>
+        String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang")) &&
+        Number(field(entry, "macDinh") ?? 0) === 1
+      ) || addresses.find(entry =>
+        String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang"))
       );
       const trangThai = Number(field(account || {}, "trangThai") ?? 1);
       return {
@@ -55,7 +62,10 @@ export async function getCustomers() {
         orders: customerOrders.length,
         spending: customerOrders.reduce((sum, entry) => sum + Number(field(entry, "tongTien") || 0), 0),
         status: trangThai === 0 ? "Bị khóa" : "Đang hoạt động",
-        trangThai
+        trangThai,
+        tinhThanh: field(defaultAddress || {}, "tinhThanh") ?? "",
+        phuongXa: field(defaultAddress || {}, "phuongXa") ?? "",
+        duong: field(defaultAddress || {}, "duong") || ""
       };
     });
   });

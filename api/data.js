@@ -3,7 +3,7 @@ const path = require("path");
 
 const tables = [
   ["nhacungcap", "NHACUNGCAP"], ["loaisp", "LOAISP"], ["loaigo", "LOAIGO"], ["kieudang", "KIEUDANG"],
-  ["chuongtrinhkhuyenmai", "CHUONGTRINHKHUYENMAI"], ["nhanvien", "NHANVIEN"], ["khachhang", "KHACHHANG"],
+  ["chuongtrinhkhuyenmai", "CHUONGTRINHKHUYENMAI"], ["nhanvien", "NHANVIEN"], ["khachhang", "KHACHHANG"], ["diachigiaohang", "DIACHIGIAOHANG"],
   ["sanpham", "SANPHAM"], ["phieunhap", "PHIEUNHAP"], ["chitietphieunhap", "CHITIETPHIEUNHAP"], ["chitiethoadon", "CHITIETHOADON"], ["hoadon", "HOADON"],
   ["kmtheosanpham", "KMTHEOSANPHAM"], ["kmtheohd", "KMTHEOHD"], ["kmtheovoucher", "KMTHEOVOUCHER"],
   ["dangnhap?select=tendangnhap,matkhau,loaitaikhoan,id_khachhang,cccd_nhanvien,trangthai", "DANGNHAP"]
@@ -45,6 +45,7 @@ module.exports = async function handler(request, response) {
       return response.status(400).json({ error: "Bảng hoặc dữ liệu thêm vào không hợp lệ." });
     }
     try {
+      // Đây là dòng lấy dữ liệu từ supabase
       const baseUrl = url.replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
       const tableResponse = await fetch(`${baseUrl}/rest/v1/${tableEntry[0].split("?")[0]}`, {
         method: "POST",
