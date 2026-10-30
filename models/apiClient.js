@@ -1,14 +1,28 @@
-export async function fetchTables(tableNames, options = {}) {
-  const query = encodeURIComponent(tableNames.join(","));
-  const accountType = options.accountType ? `&accountType=${encodeURIComponent(options.accountType)}` : "";
-  const response = await fetch(`/api/data?tables=${query}${accountType}`);
-  if (!response.ok) throw new Error(`API trả về ${response.status}`);
+import { cached, invalidate } from "./modelUtils.js";
 
-  const payload = await response.json();
-  if (payload.failures?.length) {
-    console.warn("Một số bảng Supabase không tải được:", payload.failures);
-  }
-  return payload.data || payload;
+const tableCacheKeys = new Set();
+
+export async function fetchTables(tableNames, options = {}) {
+  const normalizedTables = [...new Set(tableNames.map(name => String(name).toUpperCase()))].sort();
+  const accountType = options.accountType ? String(options.accountType).toUpperCase() : "";
+  const cacheKey = `tables:${normalizedTables.join(",")}:${accountType}`;
+  tableCacheKeys.add(cacheKey);
+  return cached(cacheKey, async () => {
+    const query = encodeURIComponent(normalizedTables.join(","));
+    const accountQuery = accountType ? `&accountType=${encodeURIComponent(accountType)}` : "";
+    const response = await fetch(`/api/data?tables=${query}${accountQuery}`);
+    if (!response.ok) throw new Error(`API trả về ${response.status}`);
+
+    const payload = await response.json();
+    if (payload.failures?.length) {
+      console.warn("Một số bảng Supabase không tải được:", payload.failures);
+    }
+    return payload.data || payload;
+  });
+}
+
+export function clearTableCache() {
+  tableCacheKeys.forEach(cacheKey => invalidate(cacheKey));
 }
 
 export async function insertRecord(table, record) {
@@ -22,6 +36,7 @@ export async function insertRecord(table, record) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
+  clearTableCache();
   return payload.data;
 }
 
@@ -39,6 +54,7 @@ export async function updateRecord(table, match, record) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
+  clearTableCache();
   return payload.data;
 }
 
@@ -53,5 +69,6 @@ export async function deleteRecord(table, match) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
+  clearTableCache();
   return payload.data;
 }
