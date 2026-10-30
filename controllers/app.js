@@ -73,7 +73,7 @@ async function render() {
   const response = await fetch(`views/${viewName}.html`);
   if (!response.ok) throw new Error(`Không thể tải view ${viewName}`);
   const view = await response.text();
-  document.querySelector("#app").innerHTML = `<div class="app">${sidebar()}<main class="main">${header()}<div class="content"><div class="page-title"><div><div class="eyebrow">WOODCRAFT /</div><h1>${titles[state.page]}</h1></div></div>${view}</div></main></div>`;
+  document.querySelector("#app").innerHTML = `<div class="app">${sidebar()}<main class="main">${header()}<div class="content"><div class="page-title"><div><h1>${titles[state.page]}</h1></div></div>${view}</div></main></div>`;
   try {
     await controllers[state.page]?.(state.query, query => { state.query = query; });
   } catch (error) {

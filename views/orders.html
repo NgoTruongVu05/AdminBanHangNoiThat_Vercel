@@ -5,21 +5,16 @@
   </select>
   <div class="spacer"></div>
 </div>
-<section class="view-card">
-  <div class="table-wrap">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Mã hóa đơn</th>
-          <th>Khách hàng (CCCD)</th>
-          <th>Nhân viên lập</th>
-          <th>Ngày đặt / giao</th>
-          <th>Tổng thanh toán</th>
-          <th>Trạng thái</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="orders-body"></tbody>
-    </table>
+<section class="master-detail">
+  <div class="master-list view-card">
+    <h2>Danh sách hóa đơn bán hàng</h2>
+    <div id="orders-body" class="master-list-items"></div>
   </div>
+  <section id="order-detail-panel" class="detail-panel view-card">
+    <div class="detail-placeholder">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <h2>Chọn một hóa đơn</h2>
+      <p>Thông tin chi tiết sẽ hiển thị tại đây.</p>
+    </div>
+  </section>
 </section>

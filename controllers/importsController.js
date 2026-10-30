@@ -4,12 +4,14 @@ import { getProductOptions } from "../models/productsModel.js";
 import { getSupplierOptions } from "../models/suppliersModel.js";
 import { escapeHtml, showAlertModal, showConfirmModal } from "./shared.js";
 
-export function initImports(query, rerender) {
-  return initRemoteTable("imports", query, rerender, getImports, {
+export async function initImports(query, rerender) {
+  await initRemoteTable("imports", query, rerender, getImports, {
     onEdit: row => openAddImport(row),
     onApprove: row => openApproveImport(row),
     onView: row => openViewImport(row)
   });
+  const firstCard = document.querySelector("#imports-body .master-card");
+  if (firstCard) firstCard.click();
 }
 
 export async function openEditImport(importRow) {
@@ -173,10 +175,12 @@ export async function openAddImport(existingImport = null) {
       if (!items.length) throw new Error("Vui lòng thêm ít nhất một sản phẩm.");
 
       const tongTien = items.reduce((sum, item) => sum + item.thanhTien, 0);
+      const supplierId = form.querySelector('[name="ID_nhaCungCap"]').value;
+      if (!supplierId) throw new Error("Vui lòng chọn nhà cung cấp.");
       const payload = {
         ngayNhap: form.querySelector('[name="ngayNhap"]').value,
-        trangThai: existingImport ? 0 : Number(form.querySelector('[name="trangThai"]').value),
-        ID_nhaCungCap: Number(form.querySelector('[name="ID_nhaCungCap"]').value),
+        trangThai: 0,
+        ID_nhaCungCap: Number(supplierId),
         tongTien,
         items
       };
@@ -201,6 +205,11 @@ export async function openAddImport(existingImport = null) {
 
 export async function openViewImport(importRow) {
   if (!importRow) return;
+  const detailPanel = document.getElementById("import-detail-panel");
+  if (!detailPanel) {
+    showAlertModal("Không tìm thấy vùng hiển thị chi tiết phiếu nhập.", "error");
+    return;
+  }
   const [importData, details] = await Promise.all([
     getImportById(importRow.rawId),
     getImportDetails(importRow.rawId)
@@ -226,36 +235,18 @@ export async function openViewImport(importRow) {
 
   backdrop.innerHTML = `
     <section class="modal import-detail-modal" role="dialog" aria-modal="true" aria-labelledby="import-detail-title">
-      <header class="import-detail-header">
+      <header class="import-detail-header ${isCompleted ? "import-status-completed" : "import-status-pending"}">
         <div class="import-detail-title-icon material-symbols-outlined" aria-hidden="true">description</div>
-        <div>
-          <div class="import-detail-title-row">
-            <h2 id="import-detail-title">Chi tiết phiếu nhập</h2>
-            <span class="import-code">${escapeHtml(importRow.id)}</span>
+        <div class="import-detail-header-main">
+          <div class="import-summary">
+            <div class="import-summary-item"><span class="import-summary-icon material-symbols-outlined" aria-hidden="true">calendar_month</span><div><span class="import-summary-label">NGÀY NHẬP</span><strong>${formatDate(importData?.date || importRow.date)}</strong></div></div>
+            <div class="import-summary-item"><span class="import-summary-icon material-symbols-outlined" aria-hidden="true">business</span><div><span class="import-summary-label">NHÀ CUNG CẤP</span><strong>${escapeHtml(importData?.supplierName || importRow.supplier)}</strong></div></div>
           </div>
-          <p>Thông tin chi tiết đơn hàng nhập kho nội bộ</p>
         </div>
-        <button type="button" class="import-detail-close" data-close aria-label="Đóng"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        <span class="import-status"><span></span>${escapeHtml(status)}</span>
+        ${!isCompleted ? `<div class="detail-actions"><button type="button" class="btn alt" data-detail-edit>Sửa</button><button type="button" class="btn" data-detail-approve>Duyệt phiếu</button></div>` : ""}
       </header>
       <div class="import-detail-content">
-        <div class="import-summary">
-          <div class="import-summary-item">
-            <span class="import-summary-icon material-symbols-outlined" aria-hidden="true">qr_code_2</span>
-            <div><span class="import-summary-label">MÃ PHIẾU</span><strong>${escapeHtml(importRow.id)}</strong></div>
-          </div>
-          <div class="import-summary-item">
-            <span class="import-summary-icon material-symbols-outlined" aria-hidden="true">calendar_month</span>
-            <div><span class="import-summary-label">NGÀY NHẬP</span><strong>${formatDate(importData?.date || importRow.date)}</strong></div>
-          </div>
-          <div class="import-summary-item">
-            <span class="import-summary-icon material-symbols-outlined" aria-hidden="true">business</span>
-            <div><span class="import-summary-label">NHÀ CUNG CẤP</span><strong>${escapeHtml(importData?.supplierName || importRow.supplier)}</strong></div>
-          </div>
-        </div>
-        <div class="import-status-banner ${isCompleted ? "import-status-completed" : "import-status-pending"}">
-          <div><span class="material-symbols-outlined" aria-hidden="true">${isCompleted ? "check_circle" : "pending"}</span><span>Trạng thái phiếu nhập</span></div>
-          <span class="import-status"><span></span>${escapeHtml(status)}</span>
-        </div>
         <div class="import-products-heading"><h3>DANH SÁCH SẢN PHẨM</h3><span>${details.length} sản phẩm</span></div>
         <div class="import-products-table-wrap">
           <div class="import-products-scroll">
@@ -269,8 +260,9 @@ export async function openViewImport(importRow) {
       </div>
     </section>`;
 
-  document.body.append(backdrop);
-  const close = () => backdrop.remove();
-  backdrop.querySelector("[data-close]").onclick = close;
-  backdrop.onclick = event => { if (event.target === backdrop) close(); };
+  detailPanel.innerHTML = backdrop.querySelector("section").innerHTML;
+  detailPanel.classList.remove("promotion-detail-panel");
+  detailPanel.querySelector("[data-detail-edit]")?.addEventListener("click", () => openAddImport(importRow));
+  detailPanel.querySelector("[data-detail-approve]")?.addEventListener("click", () => openApproveImport(importRow));
+  document.querySelectorAll("#imports-body .master-card").forEach(card => card.classList.toggle("active", card.dataset.rowId === String(importRow.rawId)));
 }

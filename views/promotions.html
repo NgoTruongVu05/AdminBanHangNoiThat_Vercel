@@ -8,22 +8,18 @@
   <button type="button" class="promo-tab" data-promo-tab="voucher">Khuyến mãi theo voucher</button>
 </div>
 
-<section class="view-card promo-panel" data-promo-panel="programs">
-  <div class="table-wrap">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Tên chương trình</th>
-          <th>Ngày bắt đầu</th>
-          <th>Ngày kết thúc</th>
-          <th>Trạng thái</th>
-          <th>Số CTKM</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="programs-body"></tbody>
-    </table>
+<section class="master-detail promo-panel" data-promo-panel="programs">
+  <div class="master-list view-card">
+    <h2>Danh sách chương trình</h2>
+    <div id="programs-body" class="master-list-items"></div>
   </div>
+  <section id="program-detail-panel" class="detail-panel view-card">
+    <div class="detail-placeholder">
+      <span class="material-symbols-outlined">local_offer</span>
+      <h2>Chọn một chương trình</h2>
+      <p>Thông tin chi tiết chương trình sẽ hiển thị tại đây.</p>
+    </div>
+  </section>
 </section>
 
 <section class="view-card promo-panel" data-promo-panel="product" style="display:none;">
@@ -98,5 +94,4 @@
     </table>
   </div>
 </section>
-
 

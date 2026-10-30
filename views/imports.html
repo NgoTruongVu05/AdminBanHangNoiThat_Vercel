@@ -7,23 +7,16 @@
   <button class="btn" id="add-btn"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>Tạo phiếu
       nhập</span></button>
 </div>
-<section class="view-card">
-  <h2>Danh sách phiếu nhập kho</h2>
-  <div class="table-wrap">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Mã phiếu</th>
-          <th>Ngày nhập</th>
-          <th>Nhà cung cấp</th>
-          <th>Số mặt hàng</th>
-          <th>Trạng thái</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="imports-body">
-        
-      </tbody>
-    </table>
+<section class="master-detail">
+  <div class="master-list view-card">
+    <h2>Danh sách phiếu nhập kho</h2>
+    <div id="imports-body" class="master-list-items"></div>
   </div>
+  <section id="import-detail-panel" class="detail-panel view-card">
+    <div class="detail-placeholder">
+      <span class="material-symbols-outlined">description</span>
+      <h2>Chọn một phiếu nhập</h2>
+      <p>Thông tin chi tiết sẽ hiển thị tại đây.</p>
+    </div>
+  </section>
 </section>

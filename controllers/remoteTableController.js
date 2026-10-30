@@ -50,11 +50,12 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
     imports: {
       rows: data.imports,
       body: "imports-body",
+      rowSelector: ".master-card",
       defaultKeys: ["id", "supplier"],
       fields: { date: "Ngày nhập", count: "Số dòng SP" },
       sideFilter: { selector: "#import-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đang nhập", "Đã hoàn tất"] },
       search: row => `${row.id} ${row.supplier}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td class="mono">${escape(row.date)}</td><td>${escape(row.supplier)}</td><td><span class="tag">${row.count} dòng SP</span></td><td><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></td><td class="actions"><button type="button" class="icon-btn" title="Xem chi tiết" aria-label="Xem chi tiết" data-view-index="${index}">${materialIcon("visibility")}</button>${row.status === "Đang nhập" ? `<button type="button" class="icon-btn" title="Sửa" aria-label="Sửa" data-edit-index="${index}">${materialIcon("edit")}</button><button type="button" class="icon-btn" title="Duyệt" aria-label="Duyệt" data-approve-index="${index}">${materialIcon("check")}</button>` : ""}</td></tr>`
+      render: (row, index) => `<article class="master-card" data-row-index="${index}" data-row-id="${escape(row.rawId)}"><div class="master-card-top"><span class="master-card-code">${escape(row.id)}</span><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></div><div class="master-card-title">${row.count} mặt hàng</div><div class="master-card-meta"><span class="material-symbols-outlined">calendar_month</span>${escape(row.date)}<span>•</span>${escape(row.supplier)}</div></article>`
     },
     promotions: {
       rows: data.promotions,
@@ -96,7 +97,7 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
   if (!config) return;
   const allRows = Array.isArray(data) ? data : config.rows || [];
   document.querySelector(`#${config.body}`).innerHTML = allRows.map((row, index) => config.render(row, index)).join("");
-  document.querySelectorAll(`#${config.body} tr`).forEach((row, index) => {
+  document.querySelectorAll(`#${config.body} ${config.rowSelector || "tr"}`).forEach((row, index) => {
     row.dataset.search = String(config.search(allRows[index]) || "").toLowerCase();
   });
   const sideFilters = [];
@@ -115,7 +116,7 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
   }
   bindDomSearch({
     initialQuery: query,
-    rowSelector: `#${config.body} tr`,
+    rowSelector: `#${config.body} ${config.rowSelector || "tr"}`,
     onQueryChange,
     fields: config.fields,
     defaultKeys: config.defaultKeys,
@@ -143,9 +144,12 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
     });
   }
   if (options.onView) {
-    document.querySelectorAll(`#${config.body} [data-view-index]`).forEach(button => {
-      const index = Number(button.dataset.viewIndex);
-      button.onclick = () => options.onView(allRows[index]);
+    document.querySelectorAll(`#${config.body} ${config.rowSelector || "tr"}`).forEach(row => {
+      const index = Number(row.dataset.rowIndex);
+      row.onclick = event => {
+        if (event.target.closest("button")) return;
+        options.onView(allRows[index]);
+      };
     });
   }
 }
