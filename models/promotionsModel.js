@@ -115,23 +115,21 @@ export async function getPromotions() {
         }
       }
       if (voucherRows.length) {
-        const voucherDetails = voucherRows.map(row => ({
-          maVoucher: field(row, "id_voucher"),
-          phanTram: field(row, "phanTram"),
-          soLuong: field(row, "soLuong")
-        }));
-        mapped.push({
-          ...base,
-          id,
-          type: "Theo voucher",
-          detail: voucherDetails.map(v => `Mã voucher: ${v.maVoucher}; Số lượng: ${v.soLuong}`).join("; "),
-          sanPham: "",
-          sanPhamId: "",
-          mucGiam: voucherDetails.map(v => `${v.phanTram}%`).join(", "),
-          phanTram: voucherDetails.map(v => v.phanTram).join(", "),
-          minTotal: "",
-          maVoucher: voucherDetails.map(v => v.maVoucher).join(", "),
-          soLuong: voucherDetails.map(v => v.soLuong).join(", ")
+        voucherRows.forEach(row => {
+          const maVoucher = field(row, "id_voucher");
+          mapped.push({
+            ...base,
+            id: `${id}::${maVoucher}`,
+            type: "Theo voucher",
+            detail: `Mã voucher: ${maVoucher}; Số lượng: ${field(row, "soLuong")}`,
+            sanPham: "",
+            sanPhamId: "",
+            mucGiam: `${field(row, "phanTram")}%`,
+            phanTram: field(row, "phanTram"),
+            minTotal: "",
+            maVoucher,
+            soLuong: field(row, "soLuong")
+          });
         });
       }
       if (!productRows.length && !invoiceRows.length && !voucherRows.length) {
@@ -358,6 +356,7 @@ export async function updatePromotionStatus(id, trangThai) {
 export async function updatePromotionRule(id, type, data) {
   let programId = id;
   let productId = null;
+  let voucherId = null;
   if (type === "Theo hóa đơn") {
     const raw = await fetchTables(["KMTHEOHD"]);
     const invoiceRow = (raw.KMTHEOHD || []).find(row => String(field(row, "ID_KM_HD")) === String(id));
@@ -366,6 +365,10 @@ export async function updatePromotionRule(id, type, data) {
     const parts = String(id).split("::");
     programId = parts[0];
     productId = parts[1];
+  } else if (type === "Theo voucher" && String(id).includes("::")) {
+    const parts = String(id).split("::");
+    programId = parts[0];
+    voucherId = parts.slice(1).join("::");
   }
 
   const payload = {};
@@ -388,7 +391,9 @@ export async function updatePromotionRule(id, type, data) {
     const payload = {};
     if (data.phanTram !== undefined) payload.phanTram = data.phanTram;
     if (data.soLuong !== undefined) payload.soLuong = data.soLuong;
-    if (Object.keys(payload).length) await updateRecord("KMTHEOVOUCHER", { id_maCTKM: id }, payload);
+    if (Object.keys(payload).length) {
+      await updateRecord("KMTHEOVOUCHER", { id_maCTKM: programId, id_voucher: voucherId }, payload);
+    }
   }
 
   invalidate("promotions");

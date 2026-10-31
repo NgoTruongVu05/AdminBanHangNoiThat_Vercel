@@ -236,9 +236,9 @@ button:active {
 }
 
 .content {
-    max-width: 1060px;
-    margin: 28px auto;
-    padding: 0 0 45px
+    width: 100%;
+    margin: 28px 0;
+    padding: 0 25px 45px
 }
 
 .data-notice {
@@ -1547,7 +1547,7 @@ select {
     }
 
     .content {
-        padding: 0 18px
+        padding: 0 18px 45px
     }
 
     .stats {
@@ -1816,18 +1816,23 @@ select {
 
 .detail-panel.promotion-detail-panel .import-products-table th:nth-child(2),
 .detail-panel.promotion-detail-panel .import-products-table td:nth-child(2) {
-    width: 15%;
+    width: 25%;
 }
 
 .detail-panel.promotion-detail-panel .import-products-table th:nth-child(3),
 .detail-panel.promotion-detail-panel .import-products-table td:nth-child(3) {
-    width: 38%;
-    text-align: left;
+    width: 18%;
 }
 
 .detail-panel.promotion-detail-panel .import-products-table th:nth-child(4),
 .detail-panel.promotion-detail-panel .import-products-table td:nth-child(4) {
-    width: 16%;
+    width: 12%;
+    white-space: normal;
+}
+
+.detail-panel.promotion-detail-panel .import-products-table th:nth-child(5),
+.detail-panel.promotion-detail-panel .import-products-table td:nth-child(5) {
+    width: 14%;
     white-space: normal;
 }
 

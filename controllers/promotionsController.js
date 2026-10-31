@@ -7,6 +7,7 @@ const typeLabels = {
   invoice: "Theo hóa đơn",
   voucher: "Theo voucher"
 };
+const displayValue = value => value == null || String(value).trim() === "" ? "—" : value;
 
 let activePromoTab = "programs";
 
@@ -92,17 +93,17 @@ async function renderTypePanel(type) {
   const select = document.getElementById(`${type}-program-filter`);
   const programName = select ? select.value : "";
   const items = await getPromotionsByType(typeLabels[type], programName);
-  body.innerHTML = items.map(item => {
+  const rows = items.map(item => {
     if (type === "product") {
       return `
         <tr>
-          <td>${escapeHtml(item.programId || item.id)}</td>
-          <td>${escapeHtml(item.name)}</td>
-          <td>${escapeHtml(item.sanPham)}</td>
-          <td>${escapeHtml(item.mucGiam)}</td>
-          <td>${escapeHtml(item.ngayBD)}</td>
-          <td>${escapeHtml(item.ngayKT)}</td>
-          <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
+          <td>${escapeHtml(displayValue(item.programId || item.id))}</td>
+          <td>${escapeHtml(displayValue(item.name))}</td>
+          <td>${escapeHtml(displayValue(item.sanPham))}</td>
+          <td>${escapeHtml(displayValue(item.mucGiam))}</td>
+          <td>${escapeHtml(displayValue(item.ngayBD))}</td>
+          <td>${escapeHtml(displayValue(item.ngayKT))}</td>
+          <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(displayValue(item.status))}</span></td>
           <td class="actions">
             <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
             <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
@@ -113,13 +114,13 @@ async function renderTypePanel(type) {
     if (type === "invoice") {
       return `
         <tr>
-          <td>${escapeHtml(item.id)}</td>
-          <td>${escapeHtml(item.name)}</td>
-          <td>${escapeHtml(item.minTotal)}</td>
-          <td>${escapeHtml(item.mucGiam)}</td>
-          <td>${escapeHtml(item.ngayBD)}</td>
-          <td>${escapeHtml(item.ngayKT)}</td>
-          <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
+          <td>${escapeHtml(displayValue(item.id))}</td>
+          <td>${escapeHtml(displayValue(item.name))}</td>
+          <td>${escapeHtml(displayValue(item.minTotal))}</td>
+          <td>${escapeHtml(displayValue(item.mucGiam))}</td>
+          <td>${escapeHtml(displayValue(item.ngayBD))}</td>
+          <td>${escapeHtml(displayValue(item.ngayKT))}</td>
+          <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(displayValue(item.status))}</span></td>
           <td class="actions">
             <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
             <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
@@ -129,21 +130,24 @@ async function renderTypePanel(type) {
     }
     return `
       <tr>
-        <td>${escapeHtml(item.id)}</td>
-        <td>${escapeHtml(item.name)}</td>
-        <td>${escapeHtml(item.maVoucher)}</td>
-        <td>${escapeHtml(item.mucGiam)}</td>
-        <td>${escapeHtml(item.soLuong)}</td>
-        <td>${escapeHtml(item.ngayBD)}</td>
-        <td>${escapeHtml(item.ngayKT)}</td>
-        <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
+        <td>${escapeHtml(displayValue(item.id))}</td>
+        <td>${escapeHtml(displayValue(item.name))}</td>
+        <td>${escapeHtml(displayValue(item.maVoucher))}</td>
+        <td>${escapeHtml(displayValue(item.mucGiam))}</td>
+        <td>${escapeHtml(displayValue(item.soLuong))}</td>
+        <td>${escapeHtml(displayValue(item.ngayBD))}</td>
+        <td>${escapeHtml(displayValue(item.ngayKT))}</td>
+        <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(displayValue(item.status))}</span></td>
         <td class="actions">
           <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
             <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
         </td>
       </tr>
     `;
-  }).join("");
+  });
+  body.innerHTML = rows.length
+    ? rows.join("")
+    : `<tr><td colspan="${type === "voucher" ? 9 : 8}" class="import-empty">Chưa có dữ liệu khuyến mãi.</td></tr>`;
   body.querySelectorAll("[data-edit-rule]").forEach(btn => {
     btn.onclick = () => Promise.resolve(openEditPromotionRule(btn.dataset.editRule, type)).catch(error => console.error(error));
   });
@@ -186,13 +190,14 @@ export async function openViewProgram(programId) {
   const isCompleted = Number(program?.trangThai ?? 1) === 1;
   const rowsHtml = rules.length ? rules.map(item => `
     <tr>
-      <td>${escapeHtml(item.programId || item.id)}</td>
       <td><span class="tag">${escapeHtml(item.type)}</span></td>
-      <td>${escapeHtml(item.detail || "")}</td>
-      <td>${escapeHtml(item.mucGiam || "")}</td>
-      <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
+      <td>${escapeHtml(displayValue(item.sanPham || item.maVoucher))}</td>
+      <td>${escapeHtml(displayValue(item.minTotal))}</td>
+      <td>${escapeHtml(displayValue(item.soLuong))}</td>
+      <td>${escapeHtml(displayValue(item.mucGiam))}</td>
+      <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(displayValue(item.status))}</span></td>
     </tr>
-  `).join("") : `<tr><td colspan="5">Chưa có CTKM nào.</td></tr>`;
+  `).join("") : `<tr><td colspan="6">Chưa có CTKM nào.</td></tr>`;
 
   backdrop.innerHTML = `
     <section class="modal import-detail-modal promotion-detail-modal" role="dialog" aria-modal="true" aria-labelledby="promotion-detail-title">
@@ -213,8 +218,8 @@ export async function openViewProgram(programId) {
         <div class="import-products-table-wrap">
           <div class="import-products-scroll">
             <table class="import-products-table">
-              <thead><tr><th>MÃ CTKM</th><th>LOẠI</th><th>CHI TIẾT</th><th>MỨC GIẢM</th><th>TRẠNG THÁI</th></tr></thead>
-              <tbody>${rowsHtml || "<tr><td colspan=\"5\" class=\"import-empty\">Không có CTKM</td></tr>"}</tbody>
+              <thead><tr><th>LOẠI</th><th>SẢN PHẨM / MÃ VOUCHER</th><th>TỔNG TỐI THIỂU</th><th>SỐ LƯỢNG</th><th>MỨC GIẢM</th><th>TRẠNG THÁI</th></tr></thead>
+              <tbody>${rowsHtml || "<tr><td colspan=\"6\" class=\"import-empty\">Không có CTKM</td></tr>"}</tbody>
             </table>
           </div>
         </div>
