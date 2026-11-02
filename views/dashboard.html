@@ -1,19 +1,19 @@
 <div class="stats">
   <div class="stat">
-    <div class="stat-label">TỔNG DOANH THU ĐƠN HÀNG</div><strong>280.930.000 ₫</strong>
-    <p>Đã giao thu: 190.430.000 ₫ <b>+4 đơn</b></p>
+    <div class="stat-label">TỔNG DOANH THU ĐƠN HÀNG</div><strong>0 ₫</strong>
+    <p>Đã hoàn thành <b id="completed-orders">0 đơn</b></p>
   </div>
   <div class="stat">
-    <div class="stat-label">CHI PHÍ NHẬP XƯỞNG</div><strong>326.500.000 ₫</strong>
-    <p>Phiếu nhập: 3 đợt <b>Nhập xưởng gỗ</b></p>
+    <div class="stat-label">CHI PHÍ NHẬP XƯỞNG</div><strong>0 ₫</strong>
+    <p>Phiếu đã hoàn tất <b id="completed-imports">0 đợt</b></p>
   </div>
   <div class="stat">
-    <div class="stat-label">TỔNG TỒN KHO NỘI THẤT</div><strong>84 sản phẩm</strong>
-    <p>8 chủng loại mẫu <b>Trong kho</b></p>
+    <div class="stat-label">TỔNG TỒN KHO NỘI THẤT</div><strong>0 sản phẩm</strong>
+    <p>Sản phẩm đang sử dụng <b id="product-count">0 mẫu</b></p>
   </div>
   <div class="stat">
-    <div class="stat-label">HỒ SƠ KHÁCH HÀNG</div><strong>5 hồ sơ</strong>
-    <p>Định danh bằng CCCD <b>100% Khách VIP</b></p>
+    <div class="stat-label">HỒ SƠ KHÁCH HÀNG</div><strong>0 hồ sơ</strong>
+    <p>Tổng hồ sơ khách hàng <b id="customer-count">0 hồ sơ</b></p>
   </div>
 </div>
 <div class="dashboard-grid">
@@ -21,8 +21,8 @@
     <div class="card-head">
       <div>
         <h2>Diễn biến doanh thu kinh doanh theo tháng</h2>
-        <p>Đơn vị tính: VNĐ (số liệu thực tế đơn hàng HOADON)</p>
-      </div><span class="tag">NĂM TÀI CHÍNH 2026</span>
+        <p>Đơn vị tính: VNĐ</p>
+      </div><span class="tag" id="revenue-period">6 THÁNG GẦN NHẤT</span>
     </div>
     <div class="chart" id="revenue-chart"></div>
   </section>
@@ -32,18 +32,117 @@
     <div class="wood-list" id="wood-list"></div>
   </section>
 </div>
-<div class="lower-grid">
-  <section class="card">
-    <div class="card-head">
-      <h2><span class="material-symbols-outlined" aria-hidden="true">warning</span> Cảnh báo tồn kho nội thất sắp hết (≤
-        5 món)</h2><span class="eyebrow">Tạo phiếu nhập kho</span>
+<section class="card financial-card">
+  <div class="card-head">
+    <div>
+      <h2>Thống kê tiền hóa đơn</h2>
+      <p>Tổng thu, tổng chi và lợi nhuận từ các giao dịch đã hoàn thành</p>
     </div>
-    <div id="stock-alerts"></div>
-  </section>
-  <section class="card">
-    <div class="card-head">
-      <h2>Hóa đơn bán hàng gần đây</h2><span class="eyebrow">Xem tất cả (4)</span>
+  </div>
+  <div class="financial-filters">
+    <label>Kiểu thống kê
+      <select id="financial-period">
+        <option value="range">Từ ngày đến ngày</option>
+        <option value="month">Theo tháng</option>
+        <option value="quarter">Theo quý</option>
+        <option value="year">Theo năm</option>
+        <option value="all-years">Các năm</option>
+      </select>
+    </label>
+    <label class="financial-range">Từ ngày
+      <input id="financial-from" type="date">
+    </label>
+    <label class="financial-range">Đến ngày
+      <input id="financial-to" type="date">
+    </label>
+    <label class="financial-month" hidden>Tháng
+      <input id="financial-month-select" type="month">
+    </label>
+    <label class="financial-year" hidden>Năm
+      <select id="financial-year-select"></select>
+    </label>
+    <label class="financial-quarter" hidden>Quý
+      <select id="financial-quarter-select">
+        <option value="1">Quý 1</option><option value="2">Quý 2</option>
+        <option value="3">Quý 3</option><option value="4">Quý 4</option>
+      </select>
+    </label>
+    <button class="btn" id="financial-apply" type="button">Xem thống kê</button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table financial-table">
+      <thead id="financial-head"></thead>
+      <tbody id="financial-body"></tbody>
+      <tfoot id="financial-foot"></tfoot>
+    </table>
+  </div>
+</section>
+<section class="card employee-financial-card" id="employee-financial-card">
+  <div class="card-head">
+    <div>
+      <h2>Thống kê tiền hóa đơn theo nhân viên</h2>
+      <p id="employee-financial-period">Hóa đơn đã hoàn thành</p>
     </div>
-    <div id="recent-orders"></div>
-  </section>
-</div>
+  </div>
+  <div class="financial-filters employee-financial-filters">
+    <label>Kiểu thống kê
+      <select id="employee-period">
+        <option value="quarter">Theo quý</option>
+        <option value="year">Theo năm</option>
+      </select>
+    </label>
+    <label>Năm
+      <select id="employee-year-select"></select>
+    </label>
+    <label class="employee-quarter">Quý
+      <select id="employee-quarter-select">
+        <option value="1">Quý 1</option><option value="2">Quý 2</option>
+        <option value="3">Quý 3</option><option value="4">Quý 4</option>
+      </select>
+    </label>
+    <button class="btn" id="employee-apply" type="button">Xem thống kê</button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table financial-table">
+      <thead id="employee-financial-head"></thead>
+      <tbody id="employee-financial-body"></tbody>
+      <tfoot id="employee-financial-foot"></tfoot>
+    </table>
+  </div>
+</section>
+<section class="card customer-financial-card" id="customer-financial-card">
+  <div class="card-head">
+    <div>
+      <h2>Thống kê tiền hóa đơn theo khách hàng</h2>
+      <p id="customer-financial-period">Hóa đơn đã hoàn thành</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table financial-table">
+      <thead id="customer-financial-head"></thead>
+      <tbody id="customer-financial-body"></tbody>
+      <tfoot id="customer-financial-foot"></tfoot>
+    </table>
+  </div>
+</section>
+<section class="card product-financial-card" id="product-financial-card">
+  <div class="card-head">
+    <div>
+      <h2>Thống kê tiền hóa đơn theo sản phẩm</h2>
+      <p>Tổng tiền hóa đơn theo từng sản phẩm qua các năm</p>
+    </div>
+  </div>
+  <div class="financial-filters">
+    <label>Năm
+      <select id="product-year-select"></select>
+    </label>
+    <button class="btn" id="product-apply" type="button">Xem thống kê</button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table financial-table">
+      <thead id="product-financial-head"></thead>
+      <tbody id="product-financial-body"></tbody>
+      <tfoot id="product-financial-foot"></tfoot>
+    </table>
+  </div>
+</section>
