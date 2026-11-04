@@ -49,9 +49,9 @@ export async function getPromotions() {
       const idSet = new Set(groupRows.map(row => field(row, "id_maCTKM")));
       const ngayBD = date(field(primary, "ngayBD"));
       const ngayKT = date(field(primary, "ngayKT"));
-      const trangThai = Number(field(primary, "trangThai") ?? 1);
+      const programTrangThai = Number(field(primary, "trangThai") ?? 1);
       const isDeleted = Number(field(primary, "isDeleted") ?? 0);
-      const status = trangThai === 0 ? "Đã khóa" : "Đang áp dụng";
+      const status = programTrangThai === 0 ? "Đã khóa" : "Đang áp dụng";
       const ghiChu = field(primary, "ghiChu") || "";
 
       const productRows = kmProducts.filter(row => idSet.has(field(row, "id_maCTKM")));
@@ -64,7 +64,8 @@ export async function getPromotions() {
         ngayBD,
         ngayKT,
         status,
-        trangThai,
+        trangThai: programTrangThai,
+        programTrangThai,
         ghiChu,
         isDeleted,
         note: parseDetail(ghiChu),
@@ -75,9 +76,11 @@ export async function getPromotions() {
         const productDetails = productRows.map(row => {
           const product = products.find(productItem => field(productItem, "id_sanPham") === field(row, "id_sanPham"));
           const productName = product ? (field(product, "tenSanPham") || field(row, "id_sanPham")) : field(row, "id_sanPham");
-          return { productName, phanTram: field(row, "phanTram"), id_sanPham: field(row, "id_sanPham") };
+          const rowTrangThai = Number(field(row, "trangThai") ?? programTrangThai);
+          return { productName, phanTram: field(row, "phanTram"), id_sanPham: field(row, "id_sanPham"), trangThai: rowTrangThai };
         });
         productDetails.forEach(detail => {
+          const detailStatus = detail.trangThai === 0 ? "Đã khóa" : "Đang áp dụng";
           mapped.push({
             ...base,
             id: `${id}::${detail.id_sanPham}`,
@@ -90,7 +93,9 @@ export async function getPromotions() {
             phanTram: detail.phanTram,
             minTotal: "",
             maVoucher: "",
-            soLuong: ""
+            soLuong: "",
+            status: detailStatus,
+            trangThai: detail.trangThai
           });
         });
       }
@@ -99,6 +104,8 @@ export async function getPromotions() {
           const invoiceId = field(invoiceRow, "ID_KM_HD");
           const phanTram = field(invoiceRow, "phanTram");
           const minTotal = field(invoiceRow, "mucTienKM");
+          const rowTrangThai = Number(field(invoiceRow, "trangThai") ?? programTrangThai);
+          const invoiceStatus = rowTrangThai === 0 ? "Đã khóa" : "Đang áp dụng";
           mapped.push({
             ...base,
             id: invoiceId,
@@ -110,25 +117,32 @@ export async function getPromotions() {
             phanTram,
             minTotal,
             maVoucher: "",
-            soLuong: ""
+            soLuong: "",
+            status: invoiceStatus,
+            trangThai: rowTrangThai
           });
         }
       }
       if (voucherRows.length) {
         voucherRows.forEach(row => {
           const maVoucher = field(row, "id_voucher");
+          const rowTrangThai = Number(field(row, "trangThai") ?? programTrangThai);
+          const voucherStatus = rowTrangThai === 0 ? "Đã khóa" : "Đang áp dụng";
           mapped.push({
             ...base,
             id: `${id}::${maVoucher}`,
             type: "Theo voucher",
-            detail: `Mã voucher: ${maVoucher}; Số lượng: ${field(row, "soLuong")}`,
+            detail: `Mã voucher: ${maVoucher}; Số lượng: ${field(row, "soLuong")}; Còn lại: ${Number(field(row, "soLuongHienTai") ?? field(row, "soLuong") ?? 0)}`,
             sanPham: "",
             sanPhamId: "",
             mucGiam: `${field(row, "phanTram")}%`,
             phanTram: field(row, "phanTram"),
             minTotal: "",
             maVoucher,
-            soLuong: field(row, "soLuong")
+            soLuong: field(row, "soLuong"),
+            soLuongHienTai: Number(field(row, "soLuongHienTai") ?? field(row, "soLuong") ?? 0),
+            status: voucherStatus,
+            trangThai: rowTrangThai
           });
         });
       }
@@ -168,8 +182,8 @@ export async function getPrograms() {
         period: item.period,
         ngayBD: item.ngayBD,
         ngayKT: item.ngayKT,
-        status: item.status,
-        trangThai: item.trangThai,
+        status: Number(item.programTrangThai ?? item.trangThai) === 0 ? "Đã khóa" : "Đang áp dụng",
+        trangThai: Number(item.programTrangThai ?? item.trangThai),
         count: 0,
         note: item.note || ""
       });
@@ -300,14 +314,16 @@ export async function createPromotionsBulk(program, rules) {
         await insertRecord("KMTHEOSANPHAM", {
           id_maCTKM: programId,
           phanTram,
-          id_sanPham: productId
+          id_sanPham: productId,
+          trangThai: program.trangThai ?? 1
         });
       }
     } else if (rule.type === "Theo hóa đơn") {
       await insertRecord("KMTHEOHD", {
         id_maCTKM: programId,
         mucTienKM: toNumber(rule.minTotal),
-        phanTram
+        phanTram,
+        trangThai: program.trangThai ?? 1
       });
     } else {
       const voucherId = String(rule.maVoucher || "").trim();
@@ -318,14 +334,17 @@ export async function createPromotionsBulk(program, rules) {
       if (existingVoucher) {
         await updateRecord("KMTHEOVOUCHER", { id_maCTKM: programId, id_voucher: voucherId }, {
           phanTram,
-          soLuong: toNumber(rule.soLuong)
+          soLuong: toNumber(rule.soLuong),
+          soLuongHienTai: toNumber(rule.soLuong),
+          trangThai: program.trangThai ?? 1
         });
       } else {
         await insertRecord("KMTHEOVOUCHER", {
           id_voucher: voucherId,
           id_maCTKM: programId,
           phanTram,
-          soLuong: toNumber(rule.soLuong)
+          soLuong: toNumber(rule.soLuong),
+          soLuongHienTai: toNumber(rule.soLuong)
         });
       }
     }
@@ -371,26 +390,24 @@ export async function updatePromotionRule(id, type, data) {
     voucherId = parts.slice(1).join("::");
   }
 
-  const payload = {};
-  if (data.trangThai !== undefined) payload.trangThai = data.trangThai;
-  if (Object.keys(payload).length) {
-    await updateRecord("CHUONGTRINHKHUYENMAI", { id_maCTKM: programId }, payload);
-  }
-
   if (type === "Theo sản phẩm") {
     const payload = {};
     if (data.phanTram !== undefined) payload.phanTram = data.phanTram;
+    if (data.trangThai !== undefined) payload.trangThai = data.trangThai;
     const match = productId ? { id_maCTKM: programId, id_sanPham: productId } : { id_maCTKM: programId };
     if (Object.keys(payload).length) await updateRecord("KMTHEOSANPHAM", match, payload);
   } else if (type === "Theo hóa đơn") {
     const payload = {};
     if (data.phanTram !== undefined) payload.phanTram = data.phanTram;
     if (data.minTotal !== undefined) payload.mucTienKM = data.minTotal;
+    if (data.trangThai !== undefined) payload.trangThai = data.trangThai;
     if (Object.keys(payload).length) await updateRecord("KMTHEOHD", { ID_KM_HD: id }, payload);
   } else {
     const payload = {};
     if (data.phanTram !== undefined) payload.phanTram = data.phanTram;
     if (data.soLuong !== undefined) payload.soLuong = data.soLuong;
+    if (data.soLuongHienTai !== undefined) payload.soLuongHienTai = data.soLuongHienTai;
+    if (data.trangThai !== undefined) payload.trangThai = data.trangThai;
     if (Object.keys(payload).length) {
       await updateRecord("KMTHEOVOUCHER", { id_maCTKM: programId, id_voucher: voucherId }, payload);
     }

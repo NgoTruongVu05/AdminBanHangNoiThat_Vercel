@@ -672,6 +672,19 @@ select {
     color: #ffffff;
 }
 
+.promo-row-locked {
+    background: rgba(198, 40, 40, 0.12);
+}
+.promo-row-locked td {
+    color: #7f1d1d;
+}
+.promo-row-program-locked {
+    background: rgba(255, 152, 0, 0.12);
+}
+.promo-row-program-locked td {
+    color: #7c4a03;
+}
+
 .actions {
     white-space: nowrap;
     color: #8f877f

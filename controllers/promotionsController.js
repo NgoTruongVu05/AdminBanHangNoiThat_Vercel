@@ -94,53 +94,59 @@ async function renderTypePanel(type) {
   const programName = select ? select.value : "";
   const items = await getPromotionsByType(typeLabels[type], programName);
   const rows = items.map(item => {
+    const programLocked = Number(item.programTrangThai) === 0;
+    const ruleLocked = Number(item.trangThai) === 0;
+    const rowClass = ruleLocked ? "promo-row-locked" : (programLocked ? "promo-row-program-locked" : "");
+    const rowTitle = programLocked && !ruleLocked ? "Chương trình đang bị khóa" : "";
+    const statusClass = ruleLocked || programLocked ? "locked" : "green";
+    const statusText = ruleLocked ? item.status : (programLocked ? "Bị khóa theo CTKM" : item.status);
     if (type === "product") {
       return `
-        <tr>
+        <tr class="${rowClass}" title="${escapeHtml(rowTitle)}">
           <td>${escapeHtml(displayValue(item.programId || item.id))}</td>
           <td>${escapeHtml(displayValue(item.name))}</td>
           <td>${escapeHtml(displayValue(item.sanPham))}</td>
           <td>${escapeHtml(displayValue(item.mucGiam))}</td>
           <td>${escapeHtml(displayValue(item.ngayBD))}</td>
           <td>${escapeHtml(displayValue(item.ngayKT))}</td>
-          <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(displayValue(item.status))}</span></td>
+          <td><span class="tag ${statusClass}">${escapeHtml(displayValue(statusText))}</span></td>
           <td class="actions">
             <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
-            <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
+            <button type="button" class="icon-btn" title="${ruleLocked ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${ruleLocked ? 1 : 0}">${materialIcon(ruleLocked ? "lock_open" : "lock")}</button>
           </td>
         </tr>
       `;
     }
     if (type === "invoice") {
       return `
-        <tr>
+        <tr class="${rowClass}" title="${escapeHtml(rowTitle)}">
           <td>${escapeHtml(displayValue(item.id))}</td>
           <td>${escapeHtml(displayValue(item.name))}</td>
           <td>${escapeHtml(displayValue(item.minTotal))}</td>
           <td>${escapeHtml(displayValue(item.mucGiam))}</td>
           <td>${escapeHtml(displayValue(item.ngayBD))}</td>
           <td>${escapeHtml(displayValue(item.ngayKT))}</td>
-          <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(displayValue(item.status))}</span></td>
+          <td><span class="tag ${statusClass}">${escapeHtml(displayValue(statusText))}</span></td>
           <td class="actions">
             <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
-            <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
+            <button type="button" class="icon-btn" title="${ruleLocked ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${ruleLocked ? 1 : 0}">${materialIcon(ruleLocked ? "lock_open" : "lock")}</button>
           </td>
         </tr>
       `;
     }
     return `
-      <tr>
+      <tr class="${rowClass}" title="${escapeHtml(rowTitle)}">
         <td>${escapeHtml(displayValue(item.id))}</td>
         <td>${escapeHtml(displayValue(item.name))}</td>
         <td>${escapeHtml(displayValue(item.maVoucher))}</td>
         <td>${escapeHtml(displayValue(item.mucGiam))}</td>
-        <td>${escapeHtml(displayValue(item.soLuong))}</td>
+        <td>${escapeHtml(displayValue(item.soLuongHienTai))}/${escapeHtml(displayValue(item.soLuong))}</td>
         <td>${escapeHtml(displayValue(item.ngayBD))}</td>
         <td>${escapeHtml(displayValue(item.ngayKT))}</td>
-        <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(displayValue(item.status))}</span></td>
+        <td><span class="tag ${statusClass}">${escapeHtml(displayValue(statusText))}</span></td>
         <td class="actions">
           <button type="button" class="icon-btn" title="Sửa" data-edit-rule="${escapeHtml(item.id)}">${materialIcon("edit")}</button>
-            <button type="button" class="icon-btn" title="${Number(item.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${Number(item.trangThai) === 0 ? 1 : 0}">${materialIcon(Number(item.trangThai) === 0 ? "lock_open" : "lock")}</button>
+            <button type="button" class="icon-btn" title="${ruleLocked ? "Mở khóa" : "Khóa"}" data-toggle-rule="${escapeHtml(item.id)}" data-type="${type}" data-next-status="${ruleLocked ? 1 : 0}">${materialIcon(ruleLocked ? "lock_open" : "lock")}</button>
         </td>
       </tr>
     `;
@@ -193,7 +199,7 @@ export async function openViewProgram(programId) {
       <td><span class="tag">${escapeHtml(item.type)}</span></td>
       <td>${escapeHtml(displayValue(item.sanPham || item.maVoucher))}</td>
       <td>${escapeHtml(displayValue(item.minTotal))}</td>
-      <td>${escapeHtml(displayValue(item.soLuong))}</td>
+      <td>${escapeHtml(displayValue(`${item.soLuongHienTai || item.soLuong}/${item.soLuong}`))}</td>
       <td>${escapeHtml(displayValue(item.mucGiam))}</td>
       <td><span class="tag ${Number(item.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(displayValue(item.status))}</span></td>
     </tr>
@@ -315,15 +321,18 @@ export async function openEditPromotionRule(id, typeKey) {
     title: "Cập nhật CTKM theo voucher",
     fields: [
       { name: "phanTram", label: "Mức giảm (%)", type: "text" },
-      { name: "soLuong", label: "Số lượng", type: "text" }
+      { name: "soLuong", label: "Số lượng", type: "text" },
+      { name: "soLuongHienTai", label: "Số lượng còn lại", type: "text" }
     ],
-    initialValues: { phanTram: item.phanTram, soLuong: item.soLuong },
+    initialValues: { phanTram: item.phanTram, soLuong: item.soLuong, soLuongHienTai: item.soLuongHienTai },
     onSubmit: data => {
       const phanTram = Number(data.phanTram);
       const soLuong = Number(data.soLuong);
+      const soLuongHienTai = Number(data.soLuongHienTai);
       if (!Number.isFinite(phanTram) || phanTram <= 0) throw new Error("Mức giảm phải là số lớn hơn 0.");
       if (!Number.isFinite(soLuong) || soLuong <= 0) throw new Error("Số lượng phải là số lớn hơn 0.");
-      return updatePromotionRule(id, type, { phanTram, soLuong });
+      if (!Number.isFinite(soLuongHienTai) || soLuongHienTai < 0 || soLuongHienTai > soLuong) throw new Error("Số lượng còn lại không hợp lệ.");
+      return updatePromotionRule(id, type, { phanTram, soLuong, soLuongHienTai });
     }
   });
 }
