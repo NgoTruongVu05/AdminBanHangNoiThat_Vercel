@@ -9,6 +9,23 @@ const tables = [
   ["dangnhap?select=tendangnhap,matkhau,loaitaikhoan,id_khachhang,cccd_nhanvien,trangthai", "DANGNHAP"]
 ];
 
+const allowedColumns = {
+  NHACUNGCAP: "id_nhacungcap,tennhacungcap,sdt,trangthai,isdeleted,tinhthanh,phuongxa,duong",
+  LOAISP: "id_loaisp,tenloai,trangthai,isdeleted", LOAIGO: "id_mago,tengo,trangthai,isdeleted",
+  KIEUDANG: "id_kieudang,tenkieudang,id_loaisp,trangthai,isdeleted",
+  CHUONGTRINHKHUYENMAI: "id_mactkm,tenctkm,ngaybd,ngaykt,ghichu,trangthai,isdeleted",
+  NHANVIEN: "cccd,hoten,sdt,email,vaitro", KHACHHANG: "id_khachhang,hoten,sdt,email",
+  DIACHIGIAOHANG: "id_diachi,id_khachhang,tinhthanh,phuongxa,duong,macdinh",
+  SANPHAM: "id_sanpham,tensanpham,id_kieudang,id_mago,dongia,soluong,trangthai,isdeleted,mota,hinhanh",
+  PHIEUNHAP: "id_phieunhap,ngaynhap,trangthai,tongtien,id_nhacungcap",
+  CHITIETPHIEUNHAP: "id_phieunhap,id_sanpham,soluong,dongia,thanhtien",
+  CHITIETHOADON: "id_hoadon,id_sanpham,soluong,dongia,thanhtien",
+  HOADON: "id_hoadon,id_khachhang,cccd_nhanvien,ngaydat,ngaygiao,id_diachigiaohang,tongtien,trangthai",
+  KMTHEOSANPHAM: "id_mactkm,id_sanpham,phantram,trangthai", KMTHEOHD: "id_km_hd,id_mactkm,muctienkm,phantram,trangthai",
+  KMTHEOVOUCHER: "id_voucher,id_mactkm,phantram,soluong,soluonghientai,trangthai",
+  DANGNHAP: "tendangnhap,matkhau,loaitaikhoan,id_khachhang,cccd_nhanvien,trangthai"
+};
+
 function getEnvironmentValue(name) {
   if (process.env[name]) return process.env[name];
   if (process.env.VERCEL) return "";
@@ -26,6 +43,7 @@ function getEnvironmentValue(name) {
 }
 
 module.exports = async function handler(request, response) {
+  response.setHeader("Cache-Control", "no-store");
   if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) {
     response.setHeader("Allow", "GET, POST, PATCH, DELETE");
     return response.status(405).json({ error: "Method Not Allowed" });
@@ -148,8 +166,21 @@ module.exports = async function handler(request, response) {
     if (requestedTables && !selectedTables.length) {
       return response.status(400).json({ error: "Danh sách bảng không hợp lệ." });
     }
+    let requestedColumns = {};
+    try {
+      requestedColumns = JSON.parse(request.query?.columns || new URL(request.url || "", "http://localhost").searchParams.get("columns") || "{}");
+    } catch {
+      return response.status(400).json({ error: "Danh sách cột không hợp lệ." });
+    }
+    const validSelect = (value, keyName) => {
+      if (!/^[a-zA-Z0-9_,]+$/.test(String(value))) return false;
+      const allowed = new Set((allowedColumns[keyName] || "").split(","));
+      return String(value).split(",").every(column => allowed.has(column));
+    };
     const result = await Promise.all(selectedTables.map(async ([table, keyName]) => {
-      let endpoint = table.includes("?") ? table : `${table}?select=*`;
+      const columns = requestedColumns[keyName] || allowedColumns[keyName];
+      if (!validSelect(columns, keyName)) return [keyName, [], { table, status: 400, detail: "Danh sách cột không hợp lệ." }];
+      let endpoint = `${table.split("?")[0]}?select=${columns}`;
       if (keyName === "DANGNHAP" && accountType) {
         endpoint += `&loaitaikhoan=eq.${encodeURIComponent(accountType)}`;
       }
@@ -166,6 +197,7 @@ module.exports = async function handler(request, response) {
     if (failures.length) {
       console.error("Supabase table requests failed:", failures.map(([, , failure]) => failure));
     }
+    response.setHeader("Cache-Control", "no-store");
     return response.status(200).json({
       data: Object.fromEntries(result.map(([name, rows]) => [name, rows])),
       failures: failures.map(([, , failure]) => failure)

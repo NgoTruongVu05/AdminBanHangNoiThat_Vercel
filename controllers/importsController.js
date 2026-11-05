@@ -2,11 +2,11 @@ import { initRemoteTable } from "./remoteTableController.js";
 import { getImports, createImport, getImportById, getImportDetails, updateImport, approveImport } from "../models/importsModel.js";
 import { getProductOptions } from "../models/productsModel.js";
 import { getSupplierOptions } from "../models/suppliersModel.js";
-import { escapeHtml, showAlertModal, showConfirmModal } from "./shared.js";
+import { escapeHtml, showAlertModal, showConfirmModal, showLoadingModal } from "./shared.js";
 
 export async function initImports(query, rerender) {
   await initRemoteTable("imports", query, rerender, getImports, {
-    onEdit: row => openAddImport(row),
+    onEdit: row => openEditImport(row),
     onApprove: row => openApproveImport(row),
     onView: row => openViewImport(row)
   });
@@ -44,15 +44,14 @@ export async function openAddImport(existingImport = null) {
     showAlertModal("Chỉ được sửa phiếu đang nhập.", "error");
     return;
   }
-
-
-  const [products, suppliers] = await Promise.all([getProductOptions(), getSupplierOptions()]);
-  let importData = null;
-  let details = [];
-  if (existingImport) {
-    importData = await getImportById(existingImport.rawId);
-    details = await getImportDetails(existingImport.rawId);
-  }
+  const closeLoading = showLoadingModal(existingImport ? "Đang mở phiếu nhập…" : "Đang tạo phiếu nhập…");
+  let products, suppliers, importData = null, details = [];
+  try {
+    [products, suppliers] = await Promise.all([getProductOptions(), getSupplierOptions()]);
+    if (existingImport) {
+      [importData, details] = await Promise.all([getImportById(existingImport.rawId), getImportDetails(existingImport.rawId)]);
+    }
+  } finally { closeLoading(); }
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";
@@ -244,7 +243,6 @@ export async function openViewImport(importRow) {
           </div>
         </div>
         <span class="import-status"><span></span>${escapeHtml(status)}</span>
-        ${!isCompleted ? `<div class="detail-actions"><button type="button" class="btn alt" data-detail-edit>Sửa</button><button type="button" class="btn" data-detail-approve>Duyệt phiếu</button></div>` : ""}
       </header>
       <div class="import-detail-content">
         <div class="import-products-heading"><h3>DANH SÁCH SẢN PHẨM</h3><span>${details.length} sản phẩm</span></div>
@@ -262,7 +260,5 @@ export async function openViewImport(importRow) {
 
   detailPanel.innerHTML = backdrop.querySelector("section").innerHTML;
   detailPanel.classList.remove("promotion-detail-panel");
-  detailPanel.querySelector("[data-detail-edit]")?.addEventListener("click", () => openAddImport(importRow));
-  detailPanel.querySelector("[data-detail-approve]")?.addEventListener("click", () => openApproveImport(importRow));
   document.querySelectorAll("#imports-body .master-card").forEach(card => card.classList.toggle("active", card.dataset.rowId === String(importRow.rawId)));
 }

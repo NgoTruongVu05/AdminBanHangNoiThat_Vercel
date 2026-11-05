@@ -369,9 +369,12 @@ export async function updateProgram(programId, data) {
     ghiChu: data.note || ""
   };
   if (data.trangThai !== undefined) payload.trangThai = data.trangThai;
-  await updateRecord("CHUONGTRINHKHUYENMAI", { id_maCTKM: programId }, payload);
+  const updatedRows = await updateRecord("CHUONGTRINHKHUYENMAI", { id_maCTKM: programId }, payload);
+  if (Array.isArray(updatedRows) && updatedRows.length === 0) {
+    throw new Error("Không tìm thấy chương trình để cập nhật. Vui lòng tải lại danh sách.");
+  }
   invalidate("promotions");
-  return 1;
+  return Array.isArray(updatedRows) ? updatedRows.length : 1;
 }
 
 export async function updatePromotionStatus(id, trangThai) {

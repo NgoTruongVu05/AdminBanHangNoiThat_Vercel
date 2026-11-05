@@ -55,7 +55,7 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       fields: { date: "Ngày nhập", count: "Số dòng SP" },
       sideFilter: { selector: "#import-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đang nhập", "Đã hoàn tất"] },
       search: row => `${row.id} ${row.supplier}`,
-      render: (row, index) => `<article class="master-card" data-row-index="${index}" data-row-id="${escape(row.rawId)}"><div class="master-card-top"><span class="master-card-code">${escape(row.id)}</span><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></div><div class="master-card-title">${row.count} mặt hàng</div><div class="master-card-meta"><span class="material-symbols-outlined">calendar_month</span>${escape(row.date)}<span>•</span>${escape(row.supplier)}</div></article>`
+      render: (row, index) => `<article class="master-card" data-row-index="${index}" data-row-id="${escape(row.rawId)}"><div class="master-card-top"><span class="master-card-code">${escape(row.id)}</span><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></div><div class="master-card-title">${row.count} mặt hàng</div><div class="master-card-meta"><span class="material-symbols-outlined">calendar_month</span>${escape(row.date)}<span>•</span>${escape(row.supplier)}</div>${row.status === "Đang nhập" ? `<div class="master-card-actions"><span>THAO TÁC</span><button type="button" class="btn alt" data-edit-index="${index}">Sửa</button><button type="button" class="btn" data-approve-index="${index}">Duyệt phiếu</button></div>` : ""}</article>`
     },
     promotions: {
       rows: data.promotions,
@@ -128,7 +128,7 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
   if (options.onEdit) {
     document.querySelectorAll(`#${config.body} [data-edit-index]`).forEach(button => {
       const index = Number(button.dataset.editIndex);
-      button.onclick = () => options.onEdit(allRows[index]);
+      button.onclick = event => { event.stopPropagation(); options.onEdit(allRows[index]); };
     });
   }
   if (options.onDelete) {
@@ -146,7 +146,7 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
   if (options.onApprove) {
     document.querySelectorAll(`#${config.body} [data-approve-index]`).forEach(button => {
       const index = Number(button.dataset.approveIndex);
-      button.onclick = () => options.onApprove(allRows[index]);
+      button.onclick = event => { event.stopPropagation(); options.onApprove(allRows[index]); };
     });
   }
   if (options.onView) {

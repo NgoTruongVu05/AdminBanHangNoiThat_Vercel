@@ -1,4 +1,4 @@
-import { bindDomSearch, money, rowActions, escapeHtml, showAddForm, showEditForm, showConfirmModal, showAlertModal } from "./shared.js";
+import { bindDomSearch, money, rowActions, escapeHtml, showAddForm, showEditForm, showConfirmModal, showAlertModal, showLoadingModal } from "./shared.js";
 import { getProducts, createProduct, updateProduct, updateProductStatus, deleteProduct } from "../models/productsModel.js";
 import { getProductCategoryOptions } from "../models/categoriesModel.js";
 import { getWoodOptions } from "../models/woodsModel.js";
@@ -6,7 +6,9 @@ import { getStyleOptions } from "../models/stylesModel.js";
 import { uploadImage, deleteImage } from "../models/storageModel.js";
 
 export async function openAddProduct() {
-  const [categories, woods, styles] = await Promise.all([getProductCategoryOptions(), getWoodOptions(), getStyleOptions()]);
+  const closeLoading = showLoadingModal("Đang mở biểu mẫu sản phẩm…");
+  let categories, woods, styles;
+  try { [categories, woods, styles] = await Promise.all([getProductCategoryOptions(), getWoodOptions(), getStyleOptions()]); } finally { closeLoading(); }
   showAddForm({
     title: "Thêm sản phẩm nội thất",
     fields: [
@@ -33,7 +35,9 @@ export async function openAddProduct() {
 }
 
 export async function openEditProduct(product) {
-  const [categories, woods, styles] = await Promise.all([getProductCategoryOptions(), getWoodOptions(), getStyleOptions()]);
+  const closeLoading = showLoadingModal("Đang mở biểu mẫu sản phẩm…");
+  let categories, woods, styles;
+  try { [categories, woods, styles] = await Promise.all([getProductCategoryOptions(), getWoodOptions(), getStyleOptions()]); } finally { closeLoading(); }
   showEditForm({
     title: "Cập nhật sản phẩm nội thất",
     fields: [

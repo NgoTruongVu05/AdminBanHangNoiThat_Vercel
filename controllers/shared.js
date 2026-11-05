@@ -18,6 +18,15 @@ export const toolbar = (placeholder, button = "Thêm mới", filters = "") => `
     <button class="btn" id="add-btn">${materialIcon("add")}<span>${button}</span></button>
   </div>`;
 
+// Used while a form is waiting for data that is not required to paint its shell.
+export function showLoadingModal(title = "Đang tải biểu mẫu…") {
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  backdrop.innerHTML = `<section class="modal" role="status" aria-live="polite"><h2>${escapeHtml(title)}</h2><p>Đang tải dữ liệu lựa chọn…</p></section>`;
+  document.body.append(backdrop);
+  return () => backdrop.remove();
+}
+
 export const bindSearch = (callback, value) => {
   const search = document.querySelector("#search");
   if (!search) return;
@@ -180,11 +189,16 @@ export function showAddForm({ title, fields, onSubmit }) {
   form.querySelectorAll("[data-depends-on]").forEach(select => {
     const dependency = form.querySelector(`[name="${select.dataset.dependsOn}"]`);
     const field = fields.find(item => item.name === select.name);
-    const updateOptions = () => {
+    const updateOptions = async () => {
+      if (typeof field.loadOptions === "function") {
+        select.disabled = true;
+        try { field.options = await field.loadOptions(dependency?.value || ""); }
+        finally { select.disabled = false; }
+      }
       select.innerHTML = renderOptions(field);
       select.value = "";
     };
-    dependency?.addEventListener("change", updateOptions);
+    dependency?.addEventListener("change", () => { updateOptions(); });
     updateOptions();
   });
   const close = () => backdrop.remove();
@@ -257,13 +271,18 @@ export function showEditForm({ title, fields, initialValues = {}, onSubmit, succ
   form.querySelectorAll("[data-depends-on]").forEach(select => {
     const dependency = form.querySelector(`[name="${select.dataset.dependsOn}"]`);
     const field = fields.find(item => item.name === select.name);
-    const updateOptions = (selectedValue) => {
+    const updateOptions = async (selectedValue) => {
       const current = selectedValue ?? select.value;
+      if (typeof field.loadOptions === "function") {
+        select.disabled = true;
+        try { field.options = await field.loadOptions(dependency?.value || ""); }
+        finally { select.disabled = false; }
+      }
       select.innerHTML = renderOptions(field, current);
       if (![...select.options].some(option => option.value === String(current))) select.value = "";
       else select.value = current;
     };
-    dependency?.addEventListener("change", () => updateOptions());
+    dependency?.addEventListener("change", () => { updateOptions(); });
   updateOptions(initialValues[field.name]);
   });
   const close = () => backdrop.remove();

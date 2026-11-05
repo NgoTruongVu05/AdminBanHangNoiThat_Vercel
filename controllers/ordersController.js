@@ -9,7 +9,7 @@ export async function initOrders(query, onQueryChange) {
   document.querySelector("#orders-body").innerHTML = orders.map((item, index) => {
     const trangThai = Number(item[6]);
     const tagClass = trangThai === 2 ? "green" : trangThai === 0 ? "locked" : "warn";
-    return `<article class="master-card" data-row-index="${index}" data-order-id="${escape(item[5])}"><div class="master-card-top"><span class="master-card-code">${escape(item[0])}</span><span class="tag ${tagClass}">${escape(item[4])}</span></div><div class="master-card-title">${escape(item[1])}</div><div class="master-card-meta"><span class="material-symbols-outlined">calendar_month</span>${escape(item[2])}<span>•</span><span class="money">${escape(item[3])}</span></div></article>`;
+    return `<article class="master-card" data-row-index="${index}" data-order-id="${escape(item[5])}"><div class="master-card-top"><span class="master-card-code">${escape(item[0])}</span><span class="tag ${tagClass}">${escape(item[4])}</span></div><div class="master-card-title">${escape(item[1])}</div><div class="master-card-meta"><span class="material-symbols-outlined">calendar_month</span>${escape(item[2])}<span>•</span><span class="money">${escape(item[3])}</span></div>${trangThai === 1 ? `<div class="master-card-actions"><span>THAO TÁC</span><button type="button" class="btn alt" data-order-cancel="${index}">Hủy hóa đơn</button><button type="button" class="btn" data-order-approve="${index}">Duyệt hóa đơn</button></div>` : ""}</article>`;
   }).join("");
   document.querySelectorAll("#orders-body .master-card").forEach((row, index) => {
     row.dataset.search = `${orders[index][0]} ${orders[index][1]}`.toLowerCase();
@@ -32,8 +32,15 @@ export async function initOrders(query, onQueryChange) {
     };
   });
 
-  const firstOrder = document.querySelector("#orders-body .master-card");
-  if (firstOrder) firstOrder.click();
+  document.querySelectorAll("#orders-body [data-order-cancel]").forEach(button => button.onclick = event => {
+    event.stopPropagation();
+    openCancelOrder(orders[Number(button.dataset.orderCancel)]);
+  });
+  document.querySelectorAll("#orders-body [data-order-approve]").forEach(button => button.onclick = event => {
+    event.stopPropagation();
+    openApproveOrder(orders[Number(button.dataset.orderApprove)]);
+  });
+
 }
 
 export async function openApproveOrder(order) {
@@ -78,8 +85,7 @@ export async function openViewOrder(order) {
   }
   const formatMoney = value => `${new Intl.NumberFormat("vi-VN").format(value)} ₫`;
   const formatDate = value => value ? String(value).slice(0, 10) : "";
-  const detail = await getOrderById(order[5]);
-  const items = await getOrderDetails(order[5]);
+  const [detail, items] = await Promise.all([getOrderById(order[5]), getOrderDetails(order[5])]);
   if (!detail) {
     showAlertModal("Không tìm thấy hóa đơn.", "error");
     return;
@@ -108,7 +114,6 @@ export async function openViewOrder(order) {
           </div>
         </div>
         <span class="import-status"><span></span>${escape(detail.statusText)}</span>
-        ${detail.trangThai === 1 ? `<div class="detail-actions"><button type="button" class="btn alt" data-detail-cancel>Hủy hóa đơn</button><button type="button" class="btn" data-detail-approve>Duyệt hóa đơn</button></div>` : ""}
       </header>
       <div class="import-detail-content">
         <div class="import-products-heading"><h3>DANH SÁCH SẢN PHẨM</h3><span>${items.length} sản phẩm</span></div>
@@ -125,7 +130,5 @@ export async function openViewOrder(order) {
     </section>`;
   detailPanel.innerHTML = backdrop.querySelector("section").innerHTML;
   detailPanel.classList.remove("promotion-detail-panel");
-  detailPanel.querySelector("[data-detail-cancel]")?.addEventListener("click", () => openCancelOrder(order));
-  detailPanel.querySelector("[data-detail-approve]")?.addEventListener("click", () => openApproveOrder(order));
   document.querySelectorAll("#orders-body .master-card").forEach(card => card.classList.toggle("active", card.dataset.orderId === String(order[5])));
 }

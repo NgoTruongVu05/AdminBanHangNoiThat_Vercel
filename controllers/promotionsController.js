@@ -52,7 +52,7 @@ export function initPromotions(query, rerender) {
   loadAndRender();
 }
 
-async function loadAndRender() {
+async function loadAndRender(selectedProgramId = null) {
   const programs = await getPrograms();
   const body = document.getElementById("programs-body");
   if (body) {
@@ -61,7 +61,7 @@ async function loadAndRender() {
         <div class="master-card-top"><span class="master-card-code">${escapeHtml(program.id)}</span><span class="tag ${Number(program.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(program.status)}</span></div>
         <div class="master-card-title">${escapeHtml(program.name)}</div>
         <div class="master-card-meta"><span class="material-symbols-outlined">date_range</span>${escapeHtml(program.ngayBD)} – ${escapeHtml(program.ngayKT)}<span>•</span>${program.count} CTKM</div>
-        <button type="button" class="icon-btn danger" data-delete-program="${escapeHtml(program.id)}" aria-label="Xóa chương trình" title="Xóa">${materialIcon("delete")}</button>
+        <div class="master-card-actions"><span>THAO TÁC</span>${Number(program.isDeleted) === 1 ? `<button type="button" class="btn danger" data-program-delete="${escapeHtml(program.id)}">${materialIcon("delete")}<span>Xóa</span></button>` : ""}<button type="button" class="btn alt" data-program-edit="${escapeHtml(program.id)}">${materialIcon("edit")}<span>Sửa</span></button><button type="button" class="btn ${Number(program.trangThai) === 0 ? "success" : ""}" data-program-toggle="${escapeHtml(program.id)}">${materialIcon(Number(program.trangThai) === 0 ? "lock_open" : "lock")}<span>${Number(program.trangThai) === 0 ? "Mở khóa" : "Khóa"}</span></button></div>
       </article>
     `).join("");
     body.querySelectorAll(".master-card").forEach(card => {
@@ -70,18 +70,41 @@ async function loadAndRender() {
         Promise.resolve(openViewProgram(card.dataset.viewProgram)).catch(error => console.error(error));
       };
     });
-    body.querySelectorAll("[data-delete-program]").forEach(button => {
-      button.onclick = async event => {
-        event.stopPropagation();
-        const program = programs.find(item => String(item.id) === button.dataset.deleteProgram);
-        if (!program) return;
-        if (program.isDeleted !== 1) return showAlertModal("Không thể xóa chương trình khuyến mãi này.", "warning");
-        if (!await showConfirmModal("Bạn có chắc muốn xóa chương trình khuyến mãi này?")) return;
-        try { await deleteProgram(program.id); await loadAndRender(); showAlertModal("Đã xóa chương trình khuyến mãi.", "success"); }
-        catch (error) { showAlertModal(`Không thể xóa chương trình khuyến mãi: ${error.message}`, "error"); }
-      };
+    body.querySelectorAll("[data-program-edit]").forEach(button => button.onclick = event => {
+      event.stopPropagation();
+      openEditProgram(button.dataset.programEdit);
     });
-    const firstProgram = body.querySelector("[data-view-program]");
+    body.querySelectorAll("[data-program-toggle]").forEach(button => button.onclick = async event => {
+      event.stopPropagation();
+      const program = programs.find(item => String(item.id) === String(button.dataset.programToggle));
+      if (!program) return;
+      const next = Number(program.trangThai) === 0 ? 1 : 0;
+      if (!await showConfirmModal(next === 0 ? "Bạn có chắc muốn khóa chương trình này?" : "Bạn có chắc muốn mở khóa chương trình này?")) return;
+      try {
+        await updateProgram(program.id, { name: program.name, ngayBD: program.ngayBD, ngayKT: program.ngayKT, trangThai: next, note: program.note || "" });
+        await loadAndRender(program.id);
+        showAlertModal(next === 0 ? "Đã khóa chương trình." : "Đã mở khóa chương trình.", "success");
+      } catch (error) {
+        console.error(error);
+        showAlertModal("Không thể cập nhật trạng thái chương trình.", "error");
+      }
+    });
+    body.querySelectorAll("[data-program-delete]").forEach(button => button.onclick = async event => {
+      event.stopPropagation();
+      const program = programs.find(item => String(item.id) === String(button.dataset.programDelete));
+      if (!program || program.isDeleted !== 1) return;
+      if (!await showConfirmModal("Bạn có chắc muốn xóa chương trình khuyến mãi này?")) return;
+      try {
+        await deleteProgram(program.id);
+        await loadAndRender();
+        showAlertModal("Đã xóa chương trình khuyến mãi.", "success");
+      } catch (error) {
+        showAlertModal(`Không thể xóa chương trình khuyến mãi: ${error.message}`, "error");
+      }
+    });
+    const cards = [...body.querySelectorAll("[data-view-program]")];
+    const selectedProgram = cards.find(card => card.dataset.viewProgram === String(selectedProgramId));
+    const firstProgram = selectedProgram || cards[0];
     if (firstProgram) firstProgram.click();
   }
 
@@ -229,7 +252,6 @@ export async function openViewProgram(programId) {
           </div>
         </div>
         <span class="import-status"><span></span>${escapeHtml(status)}</span>
-        <div class="detail-actions"><button type="button" class="btn alt" data-detail-edit>Sửa chương trình</button><button type="button" class="btn" data-detail-toggle>${isCompleted ? "Khóa chương trình" : "Mở khóa chương trình"}</button></div>
       </header>
       <div class="import-detail-content">
         <div class="import-products-heading"><h3>DANH SÁCH CTKM</h3><span>${rules.length} CTKM</span></div>
@@ -247,20 +269,6 @@ export async function openViewProgram(programId) {
 
   detailPanel.innerHTML = backdrop.querySelector("section").innerHTML;
   detailPanel.classList.add("promotion-detail-panel");
-  detailPanel.querySelector("[data-detail-edit]")?.addEventListener("click", () => openEditProgram(programId));
-  detailPanel.querySelector("[data-detail-toggle]")?.addEventListener("click", async () => {
-    const next = isCompleted ? 0 : 1;
-    const confirmed = await showConfirmModal(next === 0 ? "Bạn có chắc muốn khóa chương trình này?" : "Bạn có chắc muốn mở khóa chương trình này?");
-    if (!confirmed) return;
-    try {
-      await updateProgram(programId, { name: program.name, ngayBD: program.ngayBD, ngayKT: program.ngayKT, trangThai: next, note: program.note || "" });
-      await loadAndRender();
-      showAlertModal(next === 0 ? "Đã khóa chương trình." : "Đã mở khóa chương trình.", "success");
-    } catch (error) {
-      console.error(error);
-      showAlertModal("Không thể cập nhật trạng thái chương trình.", "error");
-    }
-  });
   document.querySelectorAll("#programs-body .master-card").forEach(card => card.classList.toggle("active", card.dataset.viewProgram === String(programId)));
 }
 

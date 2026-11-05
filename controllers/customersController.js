@@ -1,9 +1,9 @@
 import { initRemoteTable } from "./remoteTableController.js";
 import { getCustomers, createCustomerWithAccount, updateCustomer, updateCustomerStatus } from "../models/customersModel.js";
 import { createCustomerAddress, getCustomerAddresses, deactivateDefaultAddresses, updateCustomerAddress } from "../models/addressesModel.js";
-import { getProvinces, loadAllWards } from "../models/vietnamAddressModel.js";
+import { getProvinces, getWards } from "../models/vietnamAddressModel.js";
 import { field } from "../models/modelUtils.js";
-import { isValidEmail, isValidPhone, showAddForm, showEditForm, showConfirmModal, showAlertModal, escapeHtml } from "./shared.js";
+import { isValidEmail, isValidPhone, showAddForm, showEditForm, showConfirmModal, showAlertModal, showLoadingModal, escapeHtml } from "./shared.js";
 
 export function initCustomers(query, rerender) {
   return initRemoteTable("customers", query, rerender, getCustomers, {
@@ -14,11 +14,11 @@ export function initCustomers(query, rerender) {
 }
 
 export async function openAddCustomer() {
-  const [provinces, wards] = await Promise.all([getProvinces(), loadAllWards()]);
+  const closeLoading = showLoadingModal("Đang mở biểu mẫu khách hàng…");
+  let provinces;
+  try { provinces = await getProvinces(); } finally { closeLoading(); }
   const provinceOptions = provinces.map(item => ({ value: String(item.code), label: item.name }));
-  const wardOptions = wards.map(item => ({ value: String(item.code), label: item.name, categoryId: String(item.province_code) }));
   const provinceName = new Map(provinces.map(item => [String(item.code), item.name]));
-  const wardName = new Map(wards.map(item => [String(item.code), item.name]));
 
   const addresses = [];
 
@@ -51,7 +51,7 @@ export async function openAddCustomer() {
         <input type="radio" name="default-address" ${Number(addr.macDinh) === 1 ? "checked" : ""} data-default-index="${index}" title="Đặt làm mặc định">
         <div style="flex:1;">
           <div>${escapeHtml(provinceName.get(String(addr.tinhThanh)) || addr.tinhThanh)}</div>
-          <div style="font-size:12px;color:#64748b;">${escapeHtml(wardName.get(String(addr.phuongXa)) || addr.phuongXa)} - ${escapeHtml(addr.duong)}</div>
+          <div style="font-size:12px;color:#64748b;">${escapeHtml(addr.phuongXa)} - ${escapeHtml(addr.duong)}</div>
         </div>
         <button type="button" class="btn alt" data-edit-index="${index}">Sửa</button>
       </div>
@@ -71,7 +71,7 @@ export async function openAddCustomer() {
           title: "Sửa địa chỉ",
           fields: [
             { name: "tinhThanh", label: "Tỉnh/Thành phố", options: provinceOptions },
-            { name: "phuongXa", label: "Phường/Xã", options: wardOptions, dependsOn: "tinhThanh", placeholder: "Chọn phường/xã" },
+            { name: "phuongXa", label: "Phường/Xã", options: [], dependsOn: "tinhThanh", placeholder: "Chọn phường/xã", loadOptions: async code => (await getWards(code)).map(item => ({ value: String(item.code), label: item.name })) },
             { name: "duong", label: "Số nhà, tên đường" }
           ],
           initialValues: {
@@ -98,7 +98,7 @@ export async function openAddCustomer() {
       title: "Thêm địa chỉ",
       fields: [
         { name: "tinhThanh", label: "Tỉnh/Thành phố", options: provinceOptions },
-        { name: "phuongXa", label: "Phường/Xã", options: wardOptions, dependsOn: "tinhThanh", placeholder: "Chọn phường/xã" },
+        { name: "phuongXa", label: "Phường/Xã", options: [], dependsOn: "tinhThanh", placeholder: "Chọn phường/xã", loadOptions: async code => (await getWards(code)).map(item => ({ value: String(item.code), label: item.name })) },
         { name: "duong", label: "Số nhà, tên đường" }
       ],
       onSubmit: data => {
@@ -152,13 +152,11 @@ export async function openAddCustomer() {
   };
 }
 export async function openEditCustomer(customer) {
-  const [provinces, wards] = await Promise.all([getProvinces(), loadAllWards()]);
+  const closeLoading = showLoadingModal("Đang mở biểu mẫu khách hàng…");
+  let provinces, rawAddresses;
+  try { [provinces, rawAddresses] = await Promise.all([getProvinces(), getCustomerAddresses(customer.rawId)]); } finally { closeLoading(); }
   const provinceOptions = provinces.map(item => ({ value: String(item.code), label: item.name }));
-  const wardOptions = wards.map(item => ({ value: String(item.code), label: item.name, categoryId: String(item.province_code) }));
   const provinceName = new Map(provinces.map(item => [String(item.code), item.name]));
-  const wardName = new Map(wards.map(item => [String(item.code), item.name]));
-
-  const rawAddresses = await getCustomerAddresses(customer.rawId);
   const addresses = rawAddresses.map(a => ({
     id: field(a, "id_diaChi"),
     tinhThanh: field(a, "tinhThanh"),
@@ -194,7 +192,7 @@ export async function openEditCustomer(customer) {
         <input type="radio" name="default-address" ${Number(addr.macDinh) === 1 ? "checked" : ""} data-default-index="${index}" title="Đặt làm mặc định">
         <div style="flex:1;">
           <div>${escapeHtml(provinceName.get(String(addr.tinhThanh)) || addr.tinhThanh)}</div>
-          <div style="font-size:12px;color:#64748b;">${escapeHtml(wardName.get(String(addr.phuongXa)) || addr.phuongXa)} - ${escapeHtml(addr.duong)}</div>
+          <div style="font-size:12px;color:#64748b;">${escapeHtml(addr.phuongXa)} - ${escapeHtml(addr.duong)}</div>
         </div>
         <button type="button" class="btn alt" data-edit-index="${index}">Sửa</button>
       </div>
@@ -214,7 +212,7 @@ export async function openEditCustomer(customer) {
           title: "Sửa địa chỉ",
           fields: [
             { name: "tinhThanh", label: "Tỉnh/Thành phố", options: provinceOptions },
-            { name: "phuongXa", label: "Phường/Xã", options: wardOptions, dependsOn: "tinhThanh", placeholder: "Chọn phường/xã" },
+            { name: "phuongXa", label: "Phường/Xã", options: [], dependsOn: "tinhThanh", placeholder: "Chọn phường/xã", loadOptions: async code => (await getWards(code)).map(item => ({ value: String(item.code), label: item.name })) },
             { name: "duong", label: "Số nhà, tên đường" }
           ],
           initialValues: {
@@ -240,7 +238,7 @@ export async function openEditCustomer(customer) {
       title: "Thêm địa chỉ",
       fields: [
         { name: "tinhThanh", label: "Tỉnh/Thành phố", options: provinceOptions },
-        { name: "phuongXa", label: "Phường/Xã", options: wardOptions, dependsOn: "tinhThanh", placeholder: "Chọn phường/xã" },
+        { name: "phuongXa", label: "Phường/Xã", options: [], dependsOn: "tinhThanh", placeholder: "Chọn phường/xã", loadOptions: async code => (await getWards(code)).map(item => ({ value: String(item.code), label: item.name })) },
         { name: "duong", label: "Số nhà, tên đường" }
       ],
       onSubmit: data => {

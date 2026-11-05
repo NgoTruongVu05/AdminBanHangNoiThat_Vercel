@@ -435,6 +435,73 @@ select {
     font-size: 11px;
 }
 
+.master-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 12px -2px -1px;
+    padding-top: 9px;
+    border-top: 1px solid #e8edf3;
+}
+
+.master-card-actions > span {
+    margin-right: auto;
+    color: #7d91ac;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .25px;
+}
+
+.master-card-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 25px;
+    height: auto;
+    padding: 4px 7px;
+    border-color: #dce4ee;
+    border-radius: 4px;
+    background: #fff;
+    color: #304560;
+    font-size: 10px;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.master-card-actions .btn.alt {
+    border-color: #dce4ee;
+    background: #fff;
+    color: #304560;
+}
+
+.master-card-actions .btn .material-symbols-outlined {
+    font-size: 13px;
+}
+
+.master-card-actions .btn:hover {
+    border-color: #a9b9cc;
+    background: #f7f9fc;
+    box-shadow: none;
+}
+
+.master-card-actions .btn.success {
+    border-color: #07976e;
+    background: #07976e;
+    color: #fff;
+}
+
+.master-card-actions .btn.danger {
+    border-color: #bf342b;
+    background: #bf342b;
+    color: #fff;
+}
+
+.master-card-actions .btn.success:hover,
+.master-card-actions .btn.danger:hover {
+    filter: brightness(.94);
+}
+
 .master-card-action {
     position: absolute;
     right: 12px;
@@ -530,6 +597,17 @@ select {
 
 .detail-actions .btn {
     white-space: nowrap;
+}
+
+.detail-actions .promo-delete-btn {
+    background: #a43f35;
+    border-color: #a43f35;
+    color: #fff;
+}
+
+.detail-actions .promo-delete-btn:hover {
+    background: #832f28;
+    border-color: #832f28;
 }
 
 @media(max-width:900px) {

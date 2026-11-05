@@ -13,6 +13,7 @@ export async function getProvinces() {
 }
 
 export async function getWards(provinceCode) {
+  if (!provinceCode) return [];
   const key = String(provinceCode);
   if (!wardCache.has(key)) {
     const response = await fetch(API_BASE + '/p/' + key + '?depth=2');

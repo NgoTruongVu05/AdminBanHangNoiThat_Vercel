@@ -1,25 +1,24 @@
 import { initRemoteTable } from "./remoteTableController.js";
 import { getSuppliers, createSupplier, updateSupplier, updateSupplierStatus, deleteSupplier } from "../models/suppliersModel.js";
-import { isValidPhone, showAddForm, showEditForm, showConfirmModal, showAlertModal } from "./shared.js";
-import { getProvinces, loadAllWards } from "../models/vietnamAddressModel.js";
+import { isValidPhone, showAddForm, showEditForm, showConfirmModal, showAlertModal, showLoadingModal } from "./shared.js";
+import { getProvinces, getWards } from "../models/vietnamAddressModel.js";
 
 async function getAddressFields() {
-  const [provinces, wards] = await Promise.all([getProvinces(), loadAllWards()]);
+  const provinces = await getProvinces();
   return [
     { name: "tinhThanh", label: "Tỉnh/Thành phố", options: provinces.map(item => ({ value: String(item.code), label: item.name })) },
-    { name: "phuongXa", label: "Phường/Xã", options: wards.map(item => ({ value: String(item.code), label: item.name, categoryId: String(item.province_code) })), dependsOn: "tinhThanh", placeholder: "Chọn phường/xã" },
+    { name: "phuongXa", label: "Phường/Xã", options: [], dependsOn: "tinhThanh", placeholder: "Chọn phường/xã", loadOptions: async provinceCode => (await getWards(provinceCode)).map(item => ({ value: String(item.code), label: item.name })) },
     { name: "duong", label: "Số nhà, tên đường" }
   ];
 }
 
 export function initSuppliers(query, rerender) {
   const loadSuppliers = async () => {
-    const [suppliers, provinces, wards] = await Promise.all([getSuppliers(), getProvinces(), loadAllWards()]);
+    const [suppliers, provinces] = await Promise.all([getSuppliers(), getProvinces()]);
     const provinceNames = new Map(provinces.map(item => [String(item.code), item.name]));
-    const wardNames = new Map(wards.map(item => [String(item.code), item.name]));
     return suppliers.map(item => ({
       ...item,
-      address: [item.duong, wardNames.get(String(item.phuongXa)), provinceNames.get(String(item.tinhThanh))].filter(Boolean).join(", ")
+      address: [item.duong, item.phuongXa ? `Phường/Xã ${item.phuongXa}` : "", provinceNames.get(String(item.tinhThanh))].filter(Boolean).join(", ")
     }));
   };
   return initRemoteTable("suppliers", query, rerender, loadSuppliers, {
@@ -38,7 +37,9 @@ async function deleteSupplierRow(supplier) {
 }
 
 export async function openAddSupplier() {
-  const addressFields = await getAddressFields();
+  const closeLoading = showLoadingModal("Đang mở biểu mẫu nhà cung cấp…");
+  let addressFields;
+  try { addressFields = await getAddressFields(); } finally { closeLoading(); }
   showAddForm({
     title: "Thêm nhà cung cấp",
     fields: [
@@ -55,7 +56,9 @@ export async function openAddSupplier() {
 }
 
 export async function openEditSupplier(supplier) {
-  const addressFields = await getAddressFields();
+  const closeLoading = showLoadingModal("Đang mở biểu mẫu nhà cung cấp…");
+  let addressFields;
+  try { addressFields = await getAddressFields(); } finally { closeLoading(); }
   showEditForm({
     title: "Cập nhật nhà cung cấp",
     fields: [
