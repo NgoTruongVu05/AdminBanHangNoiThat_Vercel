@@ -1,4 +1,4 @@
-import { fetchTables, insertRecord, updateRecord, deleteRecord } from "./apiClient.js";
+import { fetchTables, insertRecord, updateRecord, deleteRecord, clearTableCache } from "./apiClient.js";
 import { cached, field, invalidate } from "./modelUtils.js";
 
 export async function createSupplier(record) {
@@ -23,6 +23,11 @@ export async function deleteSupplier(id) {
   return result;
 }
 
+export function invalidateSupplierCache() {
+  invalidate("suppliers");
+  clearTableCache(["NHACUNGCAP"]);
+}
+
 export async function getSupplierOptions() {
   const raw = await fetchTables(["NHACUNGCAP"]);
   return (raw.NHACUNGCAP || [])
@@ -40,7 +45,9 @@ export async function getSuppliers() {
       rawId: field(item, "id_nhaCungCap"),
       id: `NCC${field(item, "id_nhaCungCap")}`,
       name: field(item, "tenNhaCungCap") || "",
-      address: field(item, "diachi") || "",
+      tinhThanh: field(item, "tinhThanh") ?? "",
+      phuongXa: field(item, "phuongXa") ?? "",
+      duong: field(item, "duong") || "",
       phone: field(item, "sdt") || "",
       status: field(item, "trangThai") === 0 ? "Đã khóa" : "Đang hợp tác",
       trangThai: Number(field(item, "trangThai") ?? 1),

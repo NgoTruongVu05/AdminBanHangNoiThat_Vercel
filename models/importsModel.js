@@ -1,6 +1,7 @@
 import { fetchTables, insertRecord, updateRecord, deleteRecord } from "./apiClient.js";
 import { cached, date, field, invalidate } from "./modelUtils.js";
 import { updateProduct } from "./productsModel.js";
+import { invalidateSupplierCache } from "./suppliersModel.js";
 
 export async function createImport(record) {
   const header = {
@@ -38,6 +39,7 @@ export async function createImport(record) {
   }
 
   invalidate("imports");
+  invalidateSupplierCache();
   return inserted;
 }
 
@@ -106,6 +108,7 @@ export async function updateImport(importId, record) {
   }
 
   invalidate("imports");
+  invalidateSupplierCache();
   return true;
 }
 
@@ -131,6 +134,7 @@ export async function approveImport(importId) {
 
   invalidate("imports");
   invalidate("products");
+  invalidateSupplierCache();
   return true;
 }
 
