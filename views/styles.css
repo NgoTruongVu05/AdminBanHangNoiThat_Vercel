@@ -747,53 +747,113 @@ select {
 
 .stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 12px;
     margin-bottom: 25px
 }
 
 .stat {
+    position: relative;
+    min-height: 142px;
     border: 1px solid var(--line);
+    border-radius: 0;
     background: var(--panel);
-    padding: 17px
+    padding: 16px
+}
+
+.profit-stat {
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+}
+
+.profit-stat:hover,
+.profit-stat:focus-visible {
+    border-color: #008964;
+    box-shadow: 0 4px 12px #203b5d14;
+    outline: none;
 }
 
 .stat-label {
-    font: 9px var(--mono);
-    color: #86776a
+    max-width: 145px;
+    min-height: 27px;
+    font-size: 10px;
+    line-height: 1.35;
+    color: #66758a
 }
 
 .stat strong {
-    font: 600 20px var(--sans);
+    font: 800 21px var(--sans);
+    color: #071d3b;
     display: block;
-    margin: 9px 0 6px
+    margin: 8px 0 11px;
+    white-space: nowrap
+}
+
+.stat strong.positive {
+    color: #008964;
+}
+
+.stat strong.negative {
+    color: #b34444;
 }
 
 .stat p {
+    border-top: 1px solid #e8edf3;
+    padding-top: 10px;
     margin: 0;
-    color: #8c8177;
+    color: #718198;
     font-size: 10px
 }
 
 .stat p b {
-    color: var(--brown);
+    color: #18395f;
     float: right
 }
 
+.stat-icon {
+    position: absolute;
+    top: 14px;
+    right: 15px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.stat-icon svg {
+    display: block;
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.revenue-icon { color: #009b74 }
+.cost-icon { color: #dd650e }
+.profit-icon { color: #008964 }
+.stock-icon { color: #a64e16 }
+.customer-icon { color: #174ed1 }
+
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr);
+    gap: 22px
 }
 
 .card {
     border: 1px solid var(--line);
+    border-radius: 0;
     background: var(--panel);
     padding: 20px
 }
 
 .card h2 {
-    font-size: 13px;
+    color: #092044;
+    font-size: 16px;
+    line-height: 1.35;
     margin: 0
 }
 
@@ -809,13 +869,39 @@ select {
     margin: 5px 0 0
 }
 
+.card-meta {
+    color: #718198;
+    font-size: 11px;
+    white-space: nowrap
+}
+
+.chart-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0 4px;
+    border: 1px solid #dfe7ef;
+    border-radius: 0;
+    background: #f7fafc;
+    padding: 11px 12px;
+    color: #66758a;
+    font-size: 11px
+}
+
+.chart-summary strong {
+    color: var(--brown);
+    margin-right: auto
+}
+
 .chart {
-    height: 215px;
+    position: relative;
+    height: 240px;
     display: flex;
     align-items: end;
     gap: 20px;
     padding: 20px 15px 0;
-    border-bottom: 1px solid var(--line)
+    border-bottom: 1px solid #b9c9dc;
+    background: repeating-linear-gradient(to bottom, transparent 0, transparent 49px, #dce5ef 50px)
 }
 
 .bar-wrap {
@@ -831,11 +917,12 @@ select {
 .bar {
     width: 100%;
     max-width: 42px;
-    background: #d1c5b6
+    background: #c6d3e2;
+    border-radius: 0
 }
 
 .bar.active {
-    background: var(--brown)
+    background: #a64200
 }
 
 .bar-label {
@@ -844,17 +931,21 @@ select {
 }
 
 .wood-list {
-    margin-top: 20px
+    margin-top: 18px
 }
 
 .wood-item {
-    margin: 0 0 15px
+    margin: 0 0 12px;
+    border: 1px solid #18304d;
+    border-radius: 0;
+    padding: 12px
 }
 
 .wood-row {
     display: flex;
     justify-content: space-between;
-    font-size: 10px
+    font-size: 11px;
+    color: #173254
 }
 
 .wood-row span:last-child {
@@ -863,27 +954,129 @@ select {
 }
 
 .progress {
-    height: 5px;
-    background: #ebe4da;
+    height: 7px;
+    border-radius: 0;
+    background: #e0e7ef;
     margin-top: 7px
 }
 
 .progress i {
     display: block;
     height: 100%;
-    background: var(--brown)
+    border-radius: 0;
+    background: #9c4a16
 }
 
+.wood-distribution {
+    display: flex;
+    height: 16px;
+    overflow: hidden;
+    margin-top: 18px;
+    border-radius: 0
+}
+
+.wood-distribution span {
+    background: #934614;
+    border-right: 2px solid var(--panel)
+}
+
+.wood-distribution span:nth-child(2) { background: #d5a06f }
+.wood-distribution span:nth-child(3) { background: #b66b45 }
+
 .financial-card {
-    margin-top: 20px
+    margin-top: 0
 }
 
 .employee-financial-card {
-    margin-top: 20px
+    margin-top: 0
 }
 
 .product-financial-card {
-    margin-top: 20px
+    margin-top: 0
+}
+
+.customer-financial-card {
+    margin-top: 0
+}
+
+.statistics-card {
+    margin-top: 20px;
+    padding: 0;
+    height: 620px;
+    min-height: 620px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.statistics-heading {
+    padding: 20px 20px 10px;
+}
+
+.statistics-heading h2 {
+    margin: 0;
+    color: #092044;
+    font-size: 17px;
+}
+
+.statistics-heading p {
+    margin: 5px 0 0;
+    color: #718198;
+    font-size: 11px;
+}
+
+.statistics-tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    padding: 0 20px;
+}
+
+.statistics-tab {
+    flex: 0 0 auto;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #526985;
+    padding: 13px 15px 11px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.statistics-tab:hover {
+    color: var(--brown);
+    box-shadow: none;
+}
+
+.statistics-tab.active {
+    border-bottom-color: var(--brown);
+    color: var(--brown-dark);
+    font-weight: 700;
+}
+
+.statistics-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.statistics-panel[hidden] {
+    display: none;
+}
+
+.statistics-panel .card-head,
+.statistics-panel .financial-filters {
+    flex: 0 0 auto;
+}
+
+.statistics-panel > .table-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
 }
 
 .financial-filters {
@@ -1518,6 +1711,116 @@ select {
 .alert-error {
     border-color: #d99b91;
     color: #a43f35
+}
+
+.profit-modal {
+    width: min(575px, calc(100vw - 32px));
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #dfe7ef;
+    box-shadow: 0 20px 50px #0005;
+    color: #182b47;
+}
+
+.profit-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e8eef5;
+}
+
+.profit-modal-icon {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    background: #fff4c9;
+    color: #a15a10;
+    font-size: 19px;
+}
+
+.profit-modal-header h2 {
+    margin: 0;
+    color: #13223b;
+    font-size: 16px;
+}
+
+.profit-modal-header p {
+    margin: 3px 0 0;
+    color: #77869b;
+    font-size: 11px;
+}
+
+.profit-modal-header p b {
+    color: #a15a10;
+}
+
+.profit-modal-close {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: #8ca0b8;
+    font-size: 28px;
+    line-height: 1;
+}
+
+.profit-modal-close:hover {
+    color: #182b47;
+    box-shadow: none;
+}
+
+.profit-formula {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: #f7fafc;
+    border: 1px solid #dfe7ef;
+}
+
+.profit-formula-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #435672;
+    font-size: 11px;
+}
+
+.profit-formula-title span {
+    color: #77869b;
+    white-space: nowrap;
+}
+
+.profit-equation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #dfe7ef;
+    background: #fff;
+    color: #34445c;
+    font: 11px var(--mono);
+}
+
+.profit-formula p {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 12px 0 0;
+    color: #718198;
+    font-size: 11px;
+}
+
+.profit-formula p strong {
+    color: #34445c;
+    font: 11px var(--mono);
+    text-align: right;
+}
+
+.profit-formula p em {
+    color: #008964;
+    font-style: normal;
 }
 
 .alert-info {

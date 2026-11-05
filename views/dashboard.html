@@ -1,18 +1,35 @@
 <div class="stats">
   <div class="stat">
-    <div class="stat-label">TỔNG DOANH THU ĐƠN HÀNG</div><strong>0 ₫</strong>
+    <div class="stat-icon revenue-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" role="img"><path d="M4 16.5 9 11l3.5 3.5L20 7"></path><path d="M15 7h5v5"></path></svg>
+    </div>
+    <div class="stat-label">TỔNG DOANH THU ĐƠN HÀNG</div><strong id="revenue-total">0 ₫</strong>
     <p>Đã hoàn thành <b id="completed-orders">0 đơn</b></p>
   </div>
   <div class="stat">
-    <div class="stat-label">CHI PHÍ NHẬP XƯỞNG</div><strong>0 ₫</strong>
+    <div class="stat-icon cost-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" role="img"><path d="m12 4 8 4-8 4-8-4 8-4Z"></path><path d="m4 12 8 4 8-4"></path><path d="m4 16 8 4 8-4"></path></svg>
+    </div>
+    <div class="stat-label">CHI PHÍ NHẬP XƯỞNG</div><strong id="import-total">0 ₫</strong>
     <p>Phiếu đã hoàn tất <b id="completed-imports">0 đợt</b></p>
   </div>
+  <button class="stat profit-stat" id="profit-stat" type="button" aria-label="Xem công thức lợi nhuận ròng">
+    <div class="stat-icon profit-icon">◆</div>
+    <div class="stat-label">LỢI NHUẬN RÒNG</div><strong id="profit-total">0 ₫</strong>
+    <p>Biên lợi nhuận <b id="profit-margin">0%</b></p>
+  </button>
   <div class="stat">
-    <div class="stat-label">TỔNG TỒN KHO NỘI THẤT</div><strong>0 sản phẩm</strong>
+    <div class="stat-icon stock-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" role="img"><path d="M5 8h14v11H5z"></path><path d="M8 8V6.5A2.5 2.5 0 0 1 10.5 4h3A2.5 2.5 0 0 1 16 6.5V8"></path><path d="M9 12h6"></path></svg>
+    </div>
+    <div class="stat-label">TỒN KHO NỘI THẤT</div><strong id="stock-total">0 sản phẩm</strong>
     <p>Sản phẩm đang sử dụng <b id="product-count">0 mẫu</b></p>
   </div>
   <div class="stat">
-    <div class="stat-label">HỒ SƠ KHÁCH HÀNG</div><strong>0 hồ sơ</strong>
+    <div class="stat-icon customer-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" role="img"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19a5.5 5.5 0 0 1 11 0"></path><path d="M15 5.5a3 3 0 0 1 0 5.8"></path><path d="M16 14a5 5 0 0 1 4.5 5"></path></svg>
+    </div>
+    <div class="stat-label">HỒ SƠ KHÁCH HÀNG</div><strong id="customer-total">0 hồ sơ</strong>
     <p>Tổng hồ sơ khách hàng <b id="customer-count">0 hồ sơ</b></p>
   </div>
 </div>
@@ -20,19 +37,33 @@
   <section class="card">
     <div class="card-head">
       <div>
-        <h2>Diễn biến doanh thu kinh doanh theo tháng</h2>
-        <p>Đơn vị tính: VNĐ</p>
+        <h2>Diễn biến doanh thu & chi phí trong 6 tháng gần nhất</h2>
+          <p>Đơn vị tính: VNĐ · Dữ liệu đối chiếu doanh thu bán hàng thực thu và chi phí nhập xưởng</p>
       </div><span class="tag" id="revenue-period">6 THÁNG GẦN NHẤT</span>
     </div>
+    <div class="chart-summary"><span>Tháng gần nhất</span><strong id="latest-month-summary">Doanh thu: 0 ₫</strong><span>Số đơn: <b id="latest-month-orders">0 đơn</b></span></div>
     <div class="chart" id="revenue-chart"></div>
   </section>
   <section class="card">
-    <h2>Cơ cấu sản phẩm theo loại gỗ (Chất liệu)</h2>
-    <p class="sub">Phân bổ số lượng mẫu theo bảng LOAIGO</p>
+    <div class="card-head"><div><h2>Cơ cấu sản phẩm theo loại gỗ</h2><p class="sub">Tỷ trọng phân bổ mẫu thiết kế theo chất liệu gỗ</p></div><span class="card-meta" id="wood-summary"></span></div>
+    <div class="wood-distribution" id="wood-distribution"></div>
     <div class="wood-list" id="wood-list"></div>
   </section>
 </div>
-<section class="card financial-card">
+<section class="card statistics-card">
+  <div class="statistics-heading">
+    <div>
+      <h2>Sổ sách thống kê chi tiết</h2>
+      <p>Mỗi danh mục số liệu có bộ lọc và bảng riêng để theo dõi.</p>
+    </div>
+  </div>
+  <nav class="statistics-tabs" aria-label="Danh mục thống kê">
+    <button class="statistics-tab active" type="button" data-statistics-tab="financial">1. Thống kê tiền hóa đơn (P&amp;L)</button>
+    <button class="statistics-tab" type="button" data-statistics-tab="product">2. Thống kê theo sản phẩm</button>
+    <button class="statistics-tab" type="button" data-statistics-tab="employee">3. Thống kê theo nhân viên</button>
+    <button class="statistics-tab" type="button" data-statistics-tab="customer">4. Thống kê theo khách hàng</button>
+  </nav>
+  <section class="statistics-panel financial-card" data-statistics-panel="financial">
   <div class="card-head">
     <div>
       <h2>Thống kê tiền hóa đơn</h2>
@@ -76,8 +107,8 @@
       <tfoot id="financial-foot"></tfoot>
     </table>
   </div>
-</section>
-<section class="card employee-financial-card" id="employee-financial-card">
+  </section>
+  <section class="statistics-panel employee-financial-card" id="employee-financial-card" data-statistics-panel="employee">
   <div class="card-head">
     <div>
       <h2>Thống kê tiền hóa đơn theo nhân viên</h2>
@@ -109,8 +140,8 @@
       <tfoot id="employee-financial-foot"></tfoot>
     </table>
   </div>
-</section>
-<section class="card customer-financial-card" id="customer-financial-card">
+  </section>
+  <section class="statistics-panel customer-financial-card" id="customer-financial-card" data-statistics-panel="customer">
   <div class="card-head">
     <div>
       <h2>Thống kê tiền hóa đơn theo khách hàng</h2>
@@ -124,8 +155,8 @@
       <tfoot id="customer-financial-foot"></tfoot>
     </table>
   </div>
-</section>
-<section class="card product-financial-card" id="product-financial-card">
+  </section>
+  <section class="statistics-panel product-financial-card" id="product-financial-card" data-statistics-panel="product">
   <div class="card-head">
     <div>
       <h2>Thống kê tiền hóa đơn theo sản phẩm</h2>
@@ -145,4 +176,5 @@
       <tfoot id="product-financial-foot"></tfoot>
     </table>
   </div>
+  </section>
 </section>
