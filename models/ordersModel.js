@@ -76,6 +76,27 @@ export async function getOrderDetails(orderId) {
 }
 
 export async function cancelOrder(orderId) {
+  // Get order details to restore product quantities
+  const detailRaw = await fetchTables(["CHITIETHOADON", "SANPHAM"]);
+  const details = detailRaw.CHITIETHOADON || [];
+  const products = detailRaw.SANPHAM || [];
+
+  // Restore product quantities
+  for (const detail of details) {
+    if (String(field(detail, "id_hoaDon")) === String(orderId)) {
+      const product = products.find(entry =>
+        String(field(entry, "id_sanPham")) === String(field(detail, "id_sanPham"))
+      );
+      if (product) {
+        const currentStock = Number(field(product, "soLuong") || 0);
+        const orderedQuantity = Number(field(detail, "soLuong") || 0);
+        await updateRecord("SANPHAM", { id_sanPham: field(product, "id_sanPham") }, {
+          soLuong: currentStock + orderedQuantity
+        });
+      }
+    }
+  }
+
   const raw = await fetchTables(["HOADON"]);
   const orders = raw.HOADON || [];
   const item = orders.find(entry => String(field(entry, "id_hoaDon")) === String(orderId));
@@ -87,6 +108,7 @@ export async function cancelOrder(orderId) {
 
   invalidate("orders");
   invalidate("customers");
+  invalidate("products");
 }
 
 export async function approveOrder(orderId) {
