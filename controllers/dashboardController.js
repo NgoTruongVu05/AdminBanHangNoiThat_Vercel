@@ -4,6 +4,44 @@ import { money } from "./shared.js";
 const dateKey = value => String(value || "").slice(0, 10);
 const formatDate = value => value ? new Date(`${value}T00:00:00`).toLocaleDateString("vi-VN") : "";
 
+function showProfitModal(revenue, importCost, year) {
+  const profit = revenue - importCost;
+  const margin = revenue ? (profit / revenue * 100).toFixed(1) : "0.0";
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop profit-modal-backdrop";
+  backdrop.innerHTML = `
+    <section class="profit-modal" role="dialog" aria-modal="true" aria-labelledby="profit-modal-title">
+      <header class="profit-modal-header">
+        <div class="profit-modal-icon">▣</div>
+        <div>
+          <h2 id="profit-modal-title">Công thức Tính Lợi Nhuận Ròng & Biên Lợi Nhuận</h2>
+          <p>Áp dụng chuẩn kế toán cho kỳ: <b>Toàn bộ năm ${year}</b></p>
+        </div>
+        <button class="profit-modal-close" type="button" aria-label="Đóng">×</button>
+      </header>
+      <div class="profit-formula">
+        <div class="profit-formula-title"><b>1. LỢI NHUẬN RÒNG (NET PROFIT)</b><span>Đơn vị: VNĐ</span></div>
+        <div class="profit-equation"><span>Lợi Nhuận Ròng</span><b>=</b><span>Tổng Doanh Thu</span><b>-</b><span>Tổng Chi Phí Xưởng</span></div>
+        <p>Phép tính cụ thể: <strong>${money(revenue)} - ${money(importCost)} = <em>${money(profit)}</em></strong></p>
+      </div>
+      <div class="profit-formula">
+        <div class="profit-formula-title"><b>2. BIÊN LỢI NHUẬN (NET PROFIT MARGIN)</b><span>Đơn vị: Tỷ lệ %</span></div>
+        <div class="profit-equation"><span>Biên Lợi Nhuận (%)</span><b>=</b><span>( Lợi Nhuận Ròng&nbsp; / &nbsp;Tổng Doanh Thu ) × 100%</span></div>
+        <p>Phép tính cụ thể: <strong>(${money(profit)} / ${money(revenue)}) × 100% = <em>${margin}%</em></strong></p>
+      </div>
+    </section>`;
+  document.body.append(backdrop);
+  const close = () => {
+    document.removeEventListener("keydown", onKeyDown);
+    backdrop.remove();
+  };
+  const onKeyDown = event => { if (event.key === "Escape") close(); };
+  backdrop.querySelector(".profit-modal-close").onclick = close;
+  backdrop.onclick = event => { if (event.target === backdrop) close(); };
+  document.addEventListener("keydown", onKeyDown);
+  backdrop.querySelector(".profit-modal-close").focus();
+}
+
 function renderEmployeeFinancialTable(data) {
   const period = document.querySelector("#employee-period").value;
   const year = Number(document.querySelector("#employee-year-select").value);
@@ -224,16 +262,35 @@ export async function initDashboard(query, rerender) {
   const data = await getDashboardData();
   const maxRevenue = Math.max(...data.months.map(month => month.value), 1);
   const totalWoodProducts = data.woods.reduce((sum, item) => sum + item.count, 0);
-  document.querySelector(".stat strong").textContent = money(data.revenue);
-  document.querySelectorAll(".stat strong")[1].textContent = money(data.importCost);
-  document.querySelectorAll(".stat strong")[2].textContent = `${data.stock.toLocaleString("vi-VN")} sản phẩm`;
-  document.querySelectorAll(".stat strong")[3].textContent = `${data.customerCount.toLocaleString("vi-VN")} hồ sơ`;
+  const profit = data.revenue - data.importCost;
+  const margin = data.revenue ? `${(profit / data.revenue * 100).toFixed(1)}%` : "0%";
+  document.querySelector("#revenue-total").textContent = money(data.revenue);
+  document.querySelector("#import-total").textContent = money(data.importCost);
+  document.querySelector("#profit-total").textContent = money(profit);
+  document.querySelector("#profit-total").classList.toggle("negative", profit < 0);
+  document.querySelector("#profit-total").classList.toggle("positive", profit >= 0);
+  document.querySelector("#profit-margin").textContent = margin;
+  document.querySelector("#profit-stat").onclick = () => {
+    const latestYear = dateKey([...data.financialOrders, ...data.financialImports]
+      .map(item => item.date).sort().pop()).slice(0, 4) || String(new Date().getFullYear());
+    showProfitModal(data.revenue, data.importCost, latestYear);
+  };
+  document.querySelector("#stock-total").textContent = `${data.stock.toLocaleString("vi-VN")} sản phẩm`;
+  document.querySelector("#customer-total").textContent = `${data.customerCount.toLocaleString("vi-VN")} hồ sơ`;
   document.querySelector("#completed-orders").textContent = `${data.completedOrderCount} đơn`;
   document.querySelector("#completed-imports").textContent = `${data.completedImportCount} đợt`;
   document.querySelector("#product-count").textContent = `${data.productCount} mẫu`;
   document.querySelector("#customer-count").textContent = `${data.customerCount} hồ sơ`;
   document.querySelector("#revenue-period").textContent =
     `${data.months[0].label} - ${data.months[data.months.length - 1].label}`;
+  const latestMonth = data.months[data.months.length - 1];
+  document.querySelector("#latest-month-summary").textContent = `Doanh thu: ${money(latestMonth.value)}`;
+  document.querySelector("#latest-month-orders").textContent = `${latestMonth.orderCount} đơn`;
+  document.querySelector("#wood-summary").textContent = `${data.woods.length} loại · ${totalWoodProducts} mẫu`;
+  document.querySelector("#wood-distribution").innerHTML = data.woods.map(item => {
+    const percentage = totalWoodProducts ? Math.round(item.count / totalWoodProducts * 100) : 0;
+    return `<span style="width:${percentage}%"></span>`;
+  }).join("");
   document.querySelector("#revenue-chart").innerHTML = data.months.map((month, index) => {
     const height = month.value ? Math.max(month.value / maxRevenue * 100, 4) : 0;
     return `<div class="bar-wrap" title="${money(month.value)}"><div class="bar ${index === data.months.length - 1 ? "active" : ""}" style="height:${height}%"></div><span class="bar-label">${month.label}</span></div>`;
@@ -298,4 +355,18 @@ export async function initDashboard(query, rerender) {
   document.querySelector("#product-apply").onclick = () => renderProductFinancialTable(data);
   renderProductFinancialTable(data);
   renderFinancialTable(data);
+  const statisticsTabs = document.querySelectorAll("[data-statistics-tab]");
+  const statisticsPanels = document.querySelectorAll("[data-statistics-panel]");
+  statisticsTabs.forEach(tab => {
+    tab.onclick = () => {
+      const selectedTab = tab.dataset.statisticsTab;
+      statisticsTabs.forEach(item => item.classList.toggle("active", item === tab));
+      statisticsPanels.forEach(panel => {
+        panel.hidden = panel.dataset.statisticsPanel !== selectedTab;
+      });
+    };
+  });
+  statisticsPanels.forEach(panel => {
+    panel.hidden = panel.dataset.statisticsPanel !== "financial";
+  });
 }

@@ -80,7 +80,8 @@ export async function getDashboardData() {
     return {
       key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
       label: date.toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" }),
-      value: 0
+      value: 0,
+      orderCount: 0
     };
   });
   const monthMap = new Map(months.map(month => [month.key, month]));
@@ -88,7 +89,10 @@ export async function getDashboardData() {
     const date = new Date(field(item, "ngayDat"));
     if (Number.isNaN(date.getTime())) return;
     const month = monthMap.get(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`);
-    if (month) month.value += Number(field(item, "tongTien") || 0);
+    if (month) {
+      month.value += Number(field(item, "tongTien") || 0);
+      month.orderCount += 1;
+    }
   });
 
   const woods = (raw.LOAIGO || []).map(item => {
