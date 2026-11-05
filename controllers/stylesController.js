@@ -1,5 +1,5 @@
 import { initRemoteTable } from "./remoteTableController.js";
-import { getStyles, createStyle, updateStyle, updateStyleStatus } from "../models/stylesModel.js";
+import { getStyles, createStyle, updateStyle, updateStyleStatus, deleteStyle } from "../models/stylesModel.js";
 import { getCategoryOptions } from "../models/categoriesModel.js";
 import { showAddForm, showEditForm, showConfirmModal, showAlertModal } from "./shared.js";
 
@@ -7,8 +7,16 @@ export function initStyles(query, rerender) {
   return initRemoteTable("styles", query, rerender, getStyles, {
     onEdit: row => openEditStyle(row),
     onLock: row => toggleStyleLock(row),
+    onDelete: row => deleteStyleRow(row),
     isLocked: row => row.trangThai === 0
   });
+}
+
+async function deleteStyleRow(style) {
+  if (style.isDeleted !== 1) return showAlertModal("Không thể xóa kiểu dáng này.", "warning");
+  if (!await showConfirmModal("Bạn có chắc muốn xóa kiểu dáng này?")) return;
+  try { await deleteStyle(style.rawId); document.dispatchEvent(new CustomEvent("data-updated")); showAlertModal("Đã xóa kiểu dáng.", "success"); }
+  catch (error) { showAlertModal(`Không thể xóa kiểu dáng: ${error.message}`, "error"); }
 }
 
 export async function openAddStyle() {

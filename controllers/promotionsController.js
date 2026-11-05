@@ -1,4 +1,4 @@
-import { getPromotions, getPrograms, getPromotionsByType, createPromotionsBulk, updateProgram, updatePromotionRule } from "../models/promotionsModel.js";
+import { getPromotions, getPrograms, getPromotionsByType, createPromotionsBulk, updateProgram, updatePromotionRule, deleteProgram } from "../models/promotionsModel.js";
 import { getProductOptions } from "../models/productsModel.js";
 import { escapeHtml, showAlertModal, showConfirmModal, showEditForm, materialIcon } from "./shared.js";
 
@@ -61,12 +61,24 @@ async function loadAndRender() {
         <div class="master-card-top"><span class="master-card-code">${escapeHtml(program.id)}</span><span class="tag ${Number(program.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(program.status)}</span></div>
         <div class="master-card-title">${escapeHtml(program.name)}</div>
         <div class="master-card-meta"><span class="material-symbols-outlined">date_range</span>${escapeHtml(program.ngayBD)} – ${escapeHtml(program.ngayKT)}<span>•</span>${program.count} CTKM</div>
+        <button type="button" class="icon-btn danger" data-delete-program="${escapeHtml(program.id)}" aria-label="Xóa chương trình" title="Xóa">${materialIcon("delete")}</button>
       </article>
     `).join("");
     body.querySelectorAll(".master-card").forEach(card => {
       card.onclick = event => {
         if (event.target.closest("button")) return;
         Promise.resolve(openViewProgram(card.dataset.viewProgram)).catch(error => console.error(error));
+      };
+    });
+    body.querySelectorAll("[data-delete-program]").forEach(button => {
+      button.onclick = async event => {
+        event.stopPropagation();
+        const program = programs.find(item => String(item.id) === button.dataset.deleteProgram);
+        if (!program) return;
+        if (program.isDeleted !== 1) return showAlertModal("Không thể xóa chương trình khuyến mãi này.", "warning");
+        if (!await showConfirmModal("Bạn có chắc muốn xóa chương trình khuyến mãi này?")) return;
+        try { await deleteProgram(program.id); await loadAndRender(); showAlertModal("Đã xóa chương trình khuyến mãi.", "success"); }
+        catch (error) { showAlertModal(`Không thể xóa chương trình khuyến mãi: ${error.message}`, "error"); }
       };
     });
     const firstProgram = body.querySelector("[data-view-program]");

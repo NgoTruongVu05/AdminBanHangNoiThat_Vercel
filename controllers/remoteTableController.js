@@ -20,8 +20,8 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       });
   }
   const actionCell = (row, index) => rowActions(
-    false,
-    "",
+    !!options.onDelete,
+    options.onDelete ? `data-delete-index="${index}"` : "",
     options.onEdit ? `data-edit-index="${index}"` : "",
     !!options.onLock,
     options.onLock ? `data-lock-index="${index}"` : "",
@@ -129,6 +129,12 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
     document.querySelectorAll(`#${config.body} [data-edit-index]`).forEach(button => {
       const index = Number(button.dataset.editIndex);
       button.onclick = () => options.onEdit(allRows[index]);
+    });
+  }
+  if (options.onDelete) {
+    document.querySelectorAll(`#${config.body} [data-delete-index]`).forEach(button => {
+      const index = Number(button.dataset.deleteIndex);
+      button.onclick = () => options.onDelete(allRows[index]);
     });
   }
   if (options.onLock) {

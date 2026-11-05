@@ -185,7 +185,8 @@ export async function getPrograms() {
         status: Number(item.programTrangThai ?? item.trangThai) === 0 ? "Đã khóa" : "Đang áp dụng",
         trangThai: Number(item.programTrangThai ?? item.trangThai),
         count: 0,
-        note: item.note || ""
+        note: item.note || "",
+        isDeleted: Number(item.isDeleted ?? 0)
       });
     }
     if (item.type !== "(Chưa có CTKM)") {
@@ -196,6 +197,12 @@ export async function getPrograms() {
     }
   });
   return [...map.values()];
+}
+
+export async function deleteProgram(programId) {
+  const result = await deleteRecord("CHUONGTRINHKHUYENMAI", { id_maCTKM: programId });
+  invalidate("promotions");
+  return result;
 }
 
 export async function getPromotionsByType(type, programId = "") {

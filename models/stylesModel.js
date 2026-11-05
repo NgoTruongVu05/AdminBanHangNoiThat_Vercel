@@ -1,9 +1,11 @@
-import { fetchTables, insertRecord, updateRecord } from "./apiClient.js";
+import { fetchTables, insertRecord, updateRecord, deleteRecord } from "./apiClient.js";
 import { cached, field, invalidate } from "./modelUtils.js";
 
 export async function createStyle(record) {
   const result = await insertRecord("KIEUDANG", record);
   invalidate("styles");
+  invalidate("categories");
+  invalidate("products");
   return result;
 }
 
@@ -11,11 +13,20 @@ export async function updateStyle(id, record) {
   const result = await updateRecord("KIEUDANG", { id_kieuDang: id }, record);
   invalidate("styles");
   invalidate("products");
+  invalidate("categories");
   return result;
 }
 
 export async function updateStyleStatus(id, trangThai) {
   return updateStyle(id, { trangThai });
+}
+
+export async function deleteStyle(id) {
+  const result = await deleteRecord("KIEUDANG", { id_kieuDang: id });
+  invalidate("styles");
+  invalidate("products");
+  invalidate("categories");
+  return result;
 }
 
 export async function getStyleOptions() {
@@ -40,7 +51,8 @@ export async function getStyles() {
       category: field(categories.find(entry => field(entry, "id_loaiSP") === field(item, "id_loaiSP")) || {}, "tenLoai") || "",
       categoryId: field(item, "id_loaiSP"),
       status: field(item, "trangThai") === 0 ? "Đã khóa" : "Đang sử dụng",
-      trangThai: Number(field(item, "trangThai") ?? 1)
+      trangThai: Number(field(item, "trangThai") ?? 1),
+      isDeleted: Number(field(item, "isDeleted") ?? 0)
     }));
   });
 }

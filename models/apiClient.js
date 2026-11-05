@@ -1,12 +1,12 @@
 import { cached, invalidate } from "./modelUtils.js";
 
-const tableCacheKeys = new Set();
+const tableCacheKeys = new Map();
 
 export async function fetchTables(tableNames, options = {}) {
   const normalizedTables = [...new Set(tableNames.map(name => String(name).toUpperCase()))].sort();
   const accountType = options.accountType ? String(options.accountType).toUpperCase() : "";
   const cacheKey = `tables:${normalizedTables.join(",")}:${accountType}`;
-  tableCacheKeys.add(cacheKey);
+  tableCacheKeys.set(cacheKey, normalizedTables);
   return cached(cacheKey, async () => {
     const query = encodeURIComponent(normalizedTables.join(","));
     const accountQuery = accountType ? `&accountType=${encodeURIComponent(accountType)}` : "";
@@ -21,8 +21,15 @@ export async function fetchTables(tableNames, options = {}) {
   });
 }
 
-export function clearTableCache() {
-  tableCacheKeys.forEach(cacheKey => invalidate(cacheKey));
+export function clearTableCache(changedTables = null) {
+  const changed = changedTables && new Set(changedTables.map(name => String(name).toUpperCase()));
+  tableCacheKeys.forEach((tables, cacheKey) => {
+    if (!changed || tables.some(table => changed.has(table))) invalidate(cacheKey);
+  });
+}
+
+function invalidateChangedTable(table) {
+  clearTableCache([table]);
 }
 
 export async function insertRecord(table, record) {
@@ -36,7 +43,7 @@ export async function insertRecord(table, record) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
-  clearTableCache();
+  invalidateChangedTable(table);
   return payload.data;
 }
 
@@ -54,7 +61,7 @@ export async function updateRecord(table, match, record) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
-  clearTableCache();
+  invalidateChangedTable(table);
   return payload.data;
 }
 
@@ -69,6 +76,6 @@ export async function deleteRecord(table, match) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.detail ? `${payload.error || `API trả về ${response.status}`} (${payload.detail})` : (payload.error || `API trả về ${response.status}`));
-  clearTableCache();
+  invalidateChangedTable(table);
   return payload.data;
 }

@@ -1,20 +1,38 @@
-import { fetchTables, insertRecord, updateRecord } from "./apiClient.js";
+import { fetchTables, insertRecord, updateRecord, deleteRecord, clearTableCache } from "./apiClient.js";
 import { cached, field, invalidate } from "./modelUtils.js";
 
 export async function createProduct(record) {
   const result = await insertRecord("SANPHAM", record);
   invalidate("products");
+  invalidate("categories");
+  invalidate("woods");
+  invalidate("styles");
+  clearTableCache(["KIEUDANG"]);
   return result;
 }
 
 export async function updateProduct(id, record) {
   const result = await updateRecord("SANPHAM", { id_sanPham: id }, record);
   invalidate("products");
+  invalidate("categories");
+  invalidate("woods");
+  invalidate("styles");
+  clearTableCache(["KIEUDANG"]);
   return result;
 }
 
 export async function updateProductStatus(id, trangThai) {
   return updateProduct(id, { trangThai });
+}
+
+export async function deleteProduct(id) {
+  const result = await deleteRecord("SANPHAM", { id_sanPham: id });
+  invalidate("products");
+  invalidate("categories");
+  invalidate("woods");
+  invalidate("styles");
+  clearTableCache(["KIEUDANG"]);
+  return result;
 }
 
 export async function getProducts() {
@@ -44,7 +62,8 @@ export async function getProducts() {
       price: Number(field(item, "donGia") || 0),
       stock: Number(field(item, "soLuong") || 0),
       status: field(item, "trangThai") === 0 ? "Đã khóa" : "Đang sử dụng",
-      trangThai: Number(field(item, "trangThai") ?? 1)
+      trangThai: Number(field(item, "trangThai") ?? 1),
+      isDeleted: Number(field(item, "isDeleted") ?? 0)
     }));
   });
 }

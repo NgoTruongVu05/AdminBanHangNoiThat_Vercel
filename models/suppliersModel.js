@@ -1,4 +1,4 @@
-import { fetchTables, insertRecord, updateRecord } from "./apiClient.js";
+import { fetchTables, insertRecord, updateRecord, deleteRecord } from "./apiClient.js";
 import { cached, field, invalidate } from "./modelUtils.js";
 
 export async function createSupplier(record) {
@@ -15,6 +15,12 @@ export async function updateSupplier(id, record) {
 
 export async function updateSupplierStatus(id, trangThai) {
   return updateSupplier(id, { trangThai });
+}
+
+export async function deleteSupplier(id) {
+  const result = await deleteRecord("NHACUNGCAP", { id_nhaCungCap: id });
+  invalidate("suppliers");
+  return result;
 }
 
 export async function getSupplierOptions() {
@@ -37,7 +43,8 @@ export async function getSuppliers() {
       address: field(item, "diachi") || "",
       phone: field(item, "sdt") || "",
       status: field(item, "trangThai") === 0 ? "Đã khóa" : "Đang hợp tác",
-      trangThai: Number(field(item, "trangThai") ?? 1)
+      trangThai: Number(field(item, "trangThai") ?? 1),
+      isDeleted: Number(field(item, "isDeleted") ?? 0)
     }));
   });
 }

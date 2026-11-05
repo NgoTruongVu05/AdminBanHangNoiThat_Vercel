@@ -1,13 +1,21 @@
 import { initRemoteTable } from "./remoteTableController.js";
-import { getSuppliers, createSupplier, updateSupplier, updateSupplierStatus } from "../models/suppliersModel.js";
+import { getSuppliers, createSupplier, updateSupplier, updateSupplierStatus, deleteSupplier } from "../models/suppliersModel.js";
 import { isValidPhone, showAddForm, showEditForm, showConfirmModal, showAlertModal } from "./shared.js";
 
 export function initSuppliers(query, rerender) {
   return initRemoteTable("suppliers", query, rerender, getSuppliers, {
     onEdit: row => openEditSupplier(row),
     onLock: row => toggleSupplierLock(row),
+    onDelete: row => deleteSupplierRow(row),
     isLocked: row => row.trangThai === 0
   });
+}
+
+async function deleteSupplierRow(supplier) {
+  if (supplier.isDeleted !== 1) return showAlertModal("Không thể xóa nhà cung cấp này.", "warning");
+  if (!await showConfirmModal("Bạn có chắc muốn xóa nhà cung cấp này?")) return;
+  try { await deleteSupplier(supplier.rawId); document.dispatchEvent(new CustomEvent("data-updated")); showAlertModal("Đã xóa nhà cung cấp.", "success"); }
+  catch (error) { showAlertModal(`Không thể xóa nhà cung cấp: ${error.message}`, "error"); }
 }
 
 export async function openAddSupplier() {

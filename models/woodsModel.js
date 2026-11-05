@@ -1,4 +1,4 @@
-import { fetchTables, insertRecord, updateRecord } from "./apiClient.js";
+import { fetchTables, insertRecord, updateRecord, deleteRecord } from "./apiClient.js";
 import { cached, field, invalidate } from "./modelUtils.js";
 
 export async function createWood(record) {
@@ -16,6 +16,13 @@ export async function updateWood(id, record) {
 
 export async function updateWoodStatus(id, trangThai) {
   return updateWood(id, { trangThai });
+}
+
+export async function deleteWood(id) {
+  const result = await deleteRecord("LOAIGO", { id_maGo: id });
+  invalidate("woods");
+  invalidate("products");
+  return result;
 }
 
 export async function getWoodOptions() {
@@ -39,7 +46,8 @@ export async function getWoods() {
           field(product, "id_maGo") === id && field(product, "trangThai") !== 0
         ).length,
         status: field(item, "trangThai") === 0 ? "Đã khóa" : "Đang sử dụng",
-        trangThai: Number(field(item, "trangThai") ?? 1)
+        trangThai: Number(field(item, "trangThai") ?? 1),
+        isDeleted: Number(field(item, "isDeleted") ?? 0)
       };
     });
   });

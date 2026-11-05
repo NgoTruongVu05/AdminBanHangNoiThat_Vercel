@@ -1,5 +1,5 @@
 import { bindDomSearch, rowActions, escapeHtml, showAddForm, showEditForm, showConfirmModal, showAlertModal } from "./shared.js";
-import { getCategories, createCategory, updateCategory, updateCategoryStatus } from "../models/categoriesModel.js";
+import { getCategories, createCategory, updateCategory, updateCategoryStatus, deleteCategory } from "../models/categoriesModel.js";
 
 export function openAddCategory() {
   showAddForm({
@@ -28,7 +28,7 @@ export async function initCategories(query, onQueryChange) {
   document.querySelector("#categories-body").innerHTML = categories.map((item, index) => `<tr data-row-index="${index}" data-search="${escapeHtml(`${item.id} ${item.name}`.toLowerCase())}"><td class="code">${item.id}</td><td><b>${item.name}</b></td>
     <td><span class="tag">${item.count}</span></td><td><span class="tag">${item.styles} kiểu dáng</span></td>
     <td><span class="tag ${item.trangThai === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
-    <td class="actions">${rowActions(false, "", `data-edit="${item.rawId}"`, true, `data-lock="${item.rawId}"`, item.trangThai === 0)}</td></tr>`).join("");
+    <td class="actions">${rowActions(true, `data-delete="${item.rawId}"`, `data-edit="${item.rawId}"`, true, `data-lock="${item.rawId}"`, item.trangThai === 0)}</td></tr>`).join("");
   const categoryFilter = document.querySelector("#category-filter");
 if (categoryFilter) {
   const current = categoryFilter.value;
@@ -38,6 +38,15 @@ if (categoryFilter) {
   else categoryFilter.value = "";
 }
 bindDomSearch({ initialQuery: query, rowSelector: "#categories-body tr", onQueryChange, fields: categoryFields, defaultKeys: ["code", "name"], getFieldValue: (index, field) => categoryData[index]?.[field], sideFilters: [{ selector: "#category-filter", getValue: (row, rowIndex) => categoryData[rowIndex]?.status }] });
+
+  document.querySelectorAll("#categories-body [data-delete]").forEach(button => button.onclick = async () => {
+    const item = categories.find(row => Number(row.rawId) === Number(button.dataset.delete));
+    if (!item) return;
+    if (item.isDeleted !== 1) return showAlertModal("Không thể xóa loại sản phẩm này.", "warning");
+    if (!await showConfirmModal("Bạn có chắc muốn xóa loại sản phẩm này?")) return;
+    try { await deleteCategory(item.rawId); document.dispatchEvent(new CustomEvent("data-updated")); showAlertModal("Đã xóa loại sản phẩm.", "success"); }
+    catch (error) { showAlertModal(`Không thể xóa loại sản phẩm: ${error.message}`, "error"); }
+  });
 
   document.querySelectorAll("[data-edit]").forEach(button => {
     button.onclick = () => {

@@ -1,5 +1,5 @@
 import { bindDomSearch, rowActions, escapeHtml, showAddForm, showEditForm, showConfirmModal, showAlertModal } from "./shared.js";
-import { getWoods, createWood, updateWood, updateWoodStatus } from "../models/woodsModel.js";
+import { getWoods, createWood, updateWood, updateWoodStatus, deleteWood } from "../models/woodsModel.js";
 
 export function openAddWood() {
   showAddForm({
@@ -28,7 +28,7 @@ export async function initWoods(query, onQueryChange) {
   document.querySelector("#woods-body").innerHTML = woods.map((item, index) => `<tr data-row-index="${index}" data-search="${escapeHtml(`${item.id} ${item.name}`.toLowerCase())}"><td class="code">${item.id}</td><td><b>${item.name}</b></td>
     <td><span class="tag">${item.count} sản phẩm</span></td>
     <td><span class="tag ${item.trangThai === 0 ? "locked" : "green"}">${escapeHtml(item.status)}</span></td>
-    <td class="actions">${rowActions(false, "", `data-edit="${item.rawId}"`, true, `data-lock="${item.rawId}"`, item.trangThai === 0)}</td></tr>`).join("");
+    <td class="actions">${rowActions(true, `data-delete="${item.rawId}"`, `data-edit="${item.rawId}"`, true, `data-lock="${item.rawId}"`, item.trangThai === 0)}</td></tr>`).join("");
   const woodFilter = document.querySelector("#wood-filter");
 if (woodFilter) {
   const current = woodFilter.value;
@@ -38,6 +38,15 @@ if (woodFilter) {
   else woodFilter.value = "";
 }
 bindDomSearch({ initialQuery: query, rowSelector: "#woods-body tr", onQueryChange, fields: woodFields, defaultKeys: ["code", "name"], getFieldValue: (index, field) => woodData[index]?.[field], sideFilters: [{ selector: "#wood-filter", getValue: (row, rowIndex) => woodData[rowIndex]?.status }] });
+
+  document.querySelectorAll("#woods-body [data-delete]").forEach(button => button.onclick = async () => {
+    const item = woods.find(row => Number(row.rawId) === Number(button.dataset.delete));
+    if (!item) return;
+    if (item.isDeleted !== 1) return showAlertModal("Không thể xóa loại gỗ này.", "warning");
+    if (!await showConfirmModal("Bạn có chắc muốn xóa loại gỗ này?")) return;
+    try { await deleteWood(item.rawId); document.dispatchEvent(new CustomEvent("data-updated")); showAlertModal("Đã xóa loại gỗ.", "success"); }
+    catch (error) { showAlertModal(`Không thể xóa loại gỗ: ${error.message}`, "error"); }
+  });
 
   document.querySelectorAll("[data-edit]").forEach(button => {
     button.onclick = () => {

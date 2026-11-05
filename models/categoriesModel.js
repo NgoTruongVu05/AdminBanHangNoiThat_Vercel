@@ -1,9 +1,11 @@
-import { fetchTables, insertRecord, updateRecord } from "./apiClient.js";
+import { fetchTables, insertRecord, updateRecord, deleteRecord } from "./apiClient.js";
 import { cached, field, invalidate } from "./modelUtils.js";
 
 export async function createCategory(record) {
   const result = await insertRecord("LOAISP", record);
   invalidate("categories");
+  invalidate("styles");
+  invalidate("products");
   return result;
 }
 
@@ -11,11 +13,20 @@ export async function updateCategory(id, record) {
   const result = await updateRecord("LOAISP", { id_loaiSP: id }, record);
   invalidate("categories");
   invalidate("products");
+  invalidate("styles");
   return result;
 }
 
 export async function updateCategoryStatus(id, trangThai) {
   return updateCategory(id, { trangThai });
+}
+
+export async function deleteCategory(id) {
+  const result = await deleteRecord("LOAISP", { id_loaiSP: id });
+  invalidate("categories");
+  invalidate("products");
+  invalidate("styles");
+  return result;
 }
 
 export async function getCategoryOptions() {
@@ -58,7 +69,8 @@ export async function getCategories() {
         }).length,
         styles: (raw.KIEUDANG || []).filter(style => field(style, "id_loaiSP") === id).length,
         status: field(item, "trangThai") === 0 ? "Đã khóa" : "Đang sử dụng",
-        trangThai: Number(field(item, "trangThai") ?? 1)
+        trangThai: Number(field(item, "trangThai") ?? 1),
+        isDeleted: Number(field(item, "isDeleted") ?? 0)
       };
     });
   });

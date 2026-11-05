@@ -1,5 +1,5 @@
 import { bindDomSearch, money, rowActions, escapeHtml, showAddForm, showEditForm, showConfirmModal, showAlertModal } from "./shared.js";
-import { getProducts, createProduct, updateProduct, updateProductStatus } from "../models/productsModel.js";
+import { getProducts, createProduct, updateProduct, updateProductStatus, deleteProduct } from "../models/productsModel.js";
 import { getProductCategoryOptions } from "../models/categoriesModel.js";
 import { getWoodOptions } from "../models/woodsModel.js";
 import { getStyleOptions } from "../models/stylesModel.js";
@@ -91,7 +91,7 @@ export async function initProducts(query, onQueryChange) {
     <td class="money">${money(product.price)}</td>
     <td><span class="tag ${product.stock <= 3 ? "warn" : ""}">${product.stock}</span></td>
     <td><span class="tag ${product.trangThai === 0 ? "locked" : "green"}">${product.status}</span></td>
-    <td class="actions">${rowActions(true, `data-delete="${product.id}"`, `data-edit="${product.rawId}"`, true, `data-lock="${product.rawId}"`, product.trangThai === 0)}</td>
+    <td class="actions">${rowActions(true, `data-delete="${product.rawId}"`, `data-edit="${product.rawId}"`, true, `data-lock="${product.rawId}"`, product.trangThai === 0)}</td>
   </tr>`).join("");
   document.querySelector("#products-body").innerHTML = rows;
   const productFields = { category: "Phân loại", style: "Kiểu dáng", wood: "Loại gỗ", stock: "Tồn kho", price: "Đơn giá" };
@@ -118,8 +118,13 @@ export async function initProducts(query, onQueryChange) {
     getFieldValue: (index, field) => productData[index]?.[field],
     sideFilters: [{ selector: "#product-filter", getValue: (row, rowIndex) => productData[rowIndex]?.status }]
   });
-  document.querySelectorAll("[data-delete]").forEach(button => button.onclick = () => {
-    if (confirm("Xóa sản phẩm này khỏi danh sách tạm?")) button.closest("tr").remove();
+  document.querySelectorAll("[data-delete]").forEach(button => button.onclick = async () => {
+    const product = products.find(item => Number(item.rawId) === Number(button.dataset.delete));
+    if (!product) return;
+    if (product.isDeleted !== 1) return showAlertModal("Không thể xóa sản phẩm này.", "warning");
+    if (!await showConfirmModal("Bạn có chắc muốn xóa sản phẩm này?")) return;
+    try { await deleteProduct(product.rawId); document.dispatchEvent(new CustomEvent("data-updated")); showAlertModal("Đã xóa sản phẩm.", "success"); }
+    catch (error) { showAlertModal(`Không thể xóa sản phẩm: ${error.message}`, "error"); }
   });
   document.querySelectorAll("[data-edit]").forEach(button => {
     button.onclick = () => {
