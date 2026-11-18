@@ -1014,9 +1014,9 @@ select {
 
 .wood-item {
     margin: 0 0 12px;
-    border: 1px solid #18304d;
-    border-radius: 0;
-    padding: 12px
+    border: 1px solid #18253b;
+    border-radius: 8px;
+    padding: 10px 12px
 }
 
 .wood-row {
@@ -1027,30 +1027,53 @@ select {
 }
 
 .wood-row span:last-child {
-    font: 9px var(--mono);
-    color: var(--brown)
+    font-size: 11px;
+    color: #536b8e
 }
+
+.wood-row b {
+    display: flex;
+    align-items: center;
+    gap: 7px
+}
+
+.wood-swatch {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    border-radius: 4px;
+    background: #934614
+}
+
+.wood-item:nth-child(2) .wood-swatch,
+.wood-item:nth-child(2) .progress i,
+.wood-distribution .wood-segment:nth-child(2) { background: #d5a06f }
+
+.wood-item:nth-child(3) .wood-swatch,
+.wood-item:nth-child(3) .progress i,
+.wood-distribution .wood-segment:nth-child(3) { background: #b66b45 }
 
 .progress {
     height: 7px;
-    border-radius: 0;
+    border-radius: 5px;
     background: #e0e7ef;
-    margin-top: 7px
+    margin-top: 7px;
+    overflow: hidden
 }
 
 .progress i {
     display: block;
     height: 100%;
-    border-radius: 0;
+    border-radius: inherit;
     background: #9c4a16
 }
 
 .wood-distribution {
     display: flex;
-    height: 16px;
+    height: 17px;
     overflow: hidden;
     margin-top: 18px;
-    border-radius: 0
+    border-radius: 7px
 }
 
 .wood-distribution span {
@@ -1060,6 +1083,51 @@ select {
 
 .wood-distribution span:nth-child(2) { background: #d5a06f }
 .wood-distribution span:nth-child(3) { background: #b66b45 }
+
+.wood-distribution-labels {
+    display: flex;
+    gap: 16px;
+    margin-top: 7px;
+    color: #5d789f;
+    font-size: 10px
+}
+
+.wood-distribution-labels span {
+    flex: 1;
+    white-space: nowrap
+}
+
+.wood-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    color: #7385a0;
+    font-size: 10px
+}
+
+.wood-details b {
+    color: #17406d
+}
+
+.wood-details span:last-child b {
+    color: var(--brown)
+}
+
+.wood-summary-note {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e3e8ef;
+    margin-top: 14px;
+    padding-top: 12px;
+    color: #6680a3;
+    font-size: 10px
+}
+
+.wood-summary-note strong {
+    color: var(--brown);
+    font-size: 11px
+}
 
 .financial-card {
     margin-top: 0
