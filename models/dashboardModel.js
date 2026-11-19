@@ -44,6 +44,18 @@ export async function getDashboardData() {
     String(field(item, "id_sanPham")),
     field(item, "tenSanPham") || "Chưa xác định"
   ]));
+  const completedOrderIds = new Set(completedOrders.map(item => String(field(item, "id_hoaDon"))));
+  const productWoodIds = new Map(products.map(item => [
+    String(field(item, "id_sanPham")),
+    String(field(item, "id_maGo"))
+  ]));
+  const woodSales = new Map();
+  orderDetails
+    .filter(detail => completedOrderIds.has(String(field(detail, "id_hoaDon"))))
+    .forEach(detail => {
+      const woodId = productWoodIds.get(String(field(detail, "id_sanPham")));
+      if (woodId) woodSales.set(woodId, (woodSales.get(woodId) || 0) + Number(field(detail, "thanhTien") || 0));
+    });
   const productFinancialOrders = completedOrders.flatMap(order => {
     const year = String(field(order, "ngayDat") || "").slice(0, 4);
     return orderDetails
@@ -97,12 +109,15 @@ export async function getDashboardData() {
 
   const woods = (raw.LOAIGO || []).map(item => {
     const id = field(item, "id_maGo");
+    const woodProducts = products.filter(product =>
+      String(field(product, "id_maGo")) === String(id) &&
+      Number(field(product, "trangThai") ?? 1) !== 0
+    );
     return {
       name: field(item, "tenGo") || "",
-      count: products.filter(product =>
-        String(field(product, "id_maGo")) === String(id) &&
-        Number(field(product, "trangThai") ?? 1) !== 0
-      ).length
+      count: woodProducts.length,
+      stock: woodProducts.reduce((sum, product) => sum + Number(field(product, "soLuong") || 0), 0),
+      sales: woodSales.get(String(id)) || 0
     };
   }).filter(item => item.count > 0);
 

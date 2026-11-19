@@ -262,6 +262,8 @@ export async function initDashboard(query, rerender) {
   const data = await getDashboardData();
   const maxRevenue = Math.max(...data.months.map(month => month.value), 1);
   const totalWoodProducts = data.woods.reduce((sum, item) => sum + item.count, 0);
+  const totalWoodStock = data.woods.reduce((sum, item) => sum + item.stock, 0);
+  const totalWoodSales = data.woods.reduce((sum, item) => sum + item.sales, 0);
   const profit = data.revenue - data.importCost;
   const margin = data.revenue ? `${(profit / data.revenue * 100).toFixed(1)}%` : "0%";
   document.querySelector("#revenue-total").textContent = money(data.revenue);
@@ -286,10 +288,14 @@ export async function initDashboard(query, rerender) {
   const latestMonth = data.months[data.months.length - 1];
   document.querySelector("#latest-month-summary").textContent = `Doanh thu: ${money(latestMonth.value)}`;
   document.querySelector("#latest-month-orders").textContent = `${latestMonth.orderCount} đơn`;
-  document.querySelector("#wood-summary").textContent = `${data.woods.length} loại · ${totalWoodProducts} mẫu`;
+  document.querySelector("#wood-summary").textContent = `${totalWoodProducts} mẫu · ${totalWoodStock} tồn kho`;
   document.querySelector("#wood-distribution").innerHTML = data.woods.map(item => {
     const percentage = totalWoodProducts ? Math.round(item.count / totalWoodProducts * 100) : 0;
-    return `<span style="width:${percentage}%"></span>`;
+    return `<span class="wood-segment" style="width:${percentage}%"></span>`;
+  }).join("");
+  document.querySelector("#wood-distribution-labels").innerHTML = data.woods.map(item => {
+    const percentage = totalWoodProducts ? Math.round(item.count / totalWoodProducts * 100) : 0;
+    return `<span>${item.name} (${percentage}%)</span>`;
   }).join("");
   document.querySelector("#revenue-chart").innerHTML = data.months.map((month, index) => {
     const height = month.value ? Math.max(month.value / maxRevenue * 100, 4) : 0;
@@ -298,9 +304,16 @@ export async function initDashboard(query, rerender) {
   document.querySelector("#wood-list").innerHTML = data.woods.length
     ? data.woods.map(item => {
       const percentage = totalWoodProducts ? Math.round(item.count / totalWoodProducts * 100) : 0;
-      return `<div class="wood-item"><div class="wood-row"><b>${item.name}</b><span>${item.count} mẫu (${percentage}%)</span></div><div class="progress"><i style="width:${percentage}%"></i></div></div>`;
+      return `<div class="wood-item"><div class="wood-row"><b><i class="wood-swatch"></i>${item.name}</b><span>${item.count} mẫu (${percentage}%)</span></div><div class="progress"><i style="width:${percentage}%"></i></div><div class="wood-details"><span>♧ Tồn kho: <b>${item.stock} sp</b></span><span>Doanh số: <b>${money(item.sales)}</b></span></div></div>`;
     }).join("")
     : "<p>Chưa có dữ liệu loại gỗ.</p>";
+  const leadingWood = [...data.woods].sort((a, b) => b.sales - a.sales)[0];
+  const summary = document.querySelector("#wood-summary-note");
+  if (summary) {
+    summary.innerHTML = leadingWood
+     ? `<span>Chất liệu chủ lực:</span><strong>⚒ ${leadingWood.name} chiếm ${totalWoodSales ? (leadingWood.sales / totalWoodSales * 100).toFixed(1) : "0.0"}% doanh số</strong>`
+     : "";
+  }
 
   const years = [...new Set([...data.financialOrders, ...data.financialImports]
     .map(item => dateKey(item.date).slice(0, 4)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
@@ -309,8 +322,10 @@ export async function initDashboard(query, rerender) {
     `<option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>`;
   const latestDate = [...data.financialOrders, ...data.financialImports]
     .map(item => dateKey(item.date)).sort().pop() || new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   document.querySelector("#financial-from").value = `${latestDate.slice(0, 4)}-01-01`;
-  document.querySelector("#financial-to").value = latestDate;
+  document.querySelector("#financial-to").value = todayKey;
   const periodSelect = document.querySelector("#financial-period");
   const toggleFinancialFields = () => {
     const period = periodSelect.value;
