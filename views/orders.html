@@ -5,10 +5,15 @@
   </select>
   <div class="spacer"></div>
 </div>
-<section class="master-detail">
+<section class="master-detail orders-layout">
   <div class="master-list view-card">
-    <h2>Danh sách hóa đơn bán hàng</h2>
-    <div id="orders-body" class="master-list-items"></div>
+    <div class="list-heading"><h2>Danh sách hóa đơn bán hàng</h2><span id="orders-count"></span></div>
+    <div class="table-wrap master-table-wrap">
+      <table class="data-table master-table">
+        <thead><tr><th>Mã HĐ</th><th>Khách hàng</th><th>Nhân viên</th><th>Ngày đặt</th><th>Ngày giao</th><th>Tổng tiền</th><th>Thành tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody id="orders-body"></tbody>
+      </table>
+    </div>
   </div>
   <section id="order-detail-panel" class="detail-panel view-card">
     <div class="detail-placeholder">

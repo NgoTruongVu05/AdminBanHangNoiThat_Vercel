@@ -20,7 +20,7 @@ const tableColumns = {
   PHIEUNHAP: "id_phieunhap,ngaynhap,trangthai,tongtien,id_nhacungcap",
   CHITIETPHIEUNHAP: "id_phieunhap,id_sanpham,soluong,dongia,thanhtien",
   CHITIETHOADON: "id_hoadon,id_sanpham,soluong,dongia,thanhtien",
-  HOADON: "id_hoadon,id_khachhang,cccd_nhanvien,ngaydat,ngaygiao,id_diachigiaohang,tongtien,trangthai",
+  HOADON: "id_hoadon,id_khachhang,cccd_nhanvien,ngaydat,ngaygiao,id_diachigiaohang,tongtien,thanhtien,trangthai,id_mactkm,id_voucher",
   KMTHEOSANPHAM: "id_mactkm,id_sanpham,phantram,trangthai",
   KMTHEOHD: "id_km_hd,id_mactkm,muctienkm,phantram,trangthai",
   KMTHEOVOUCHER: "id_voucher,id_mactkm,phantram,soluong,soluonghientai,trangthai",

@@ -10,7 +10,9 @@ export async function initImports(query, rerender) {
     onApprove: row => openApproveImport(row),
     onView: row => openViewImport(row)
   });
-  const firstCard = document.querySelector("#imports-body .master-card");
+  const count = document.querySelector("#imports-count");
+  if (count) count.textContent = `${document.querySelectorAll("#imports-body tr").length} phiếu nhập`;
+  const firstCard = document.querySelector("#imports-body tr");
   if (firstCard) firstCard.click();
 }
 
@@ -53,8 +55,6 @@ export async function openAddImport(existingImport = null) {
     }
   } finally { closeLoading(); }
 
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
 
   const supplierOptionsHtml = suppliers.map(supplier =>
     `<option value="${escapeHtml(supplier.value)}" ${importData && String(importData.supplierId) === String(supplier.value) ? "selected" : ""}>${escapeHtml(supplier.label)}</option>`
@@ -209,21 +209,10 @@ export async function openViewImport(importRow) {
     showAlertModal("Không tìm thấy vùng hiển thị chi tiết phiếu nhập.", "error");
     return;
   }
-  const [importData, details] = await Promise.all([
-    getImportById(importRow.rawId),
-    getImportDetails(importRow.rawId)
-  ]);
+  const details = await getImportDetails(importRow.rawId);
 
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
   const total = details.reduce((sum, item) => sum + item.thanhTien, 0);
-  const formatDate = value => {
-    const [year, month, day] = String(value || "").slice(0, 10).split("-");
-    return year && month && day ? `${day}/${month}/${year}` : "—";
-  };
   const formatMoney = value => `${new Intl.NumberFormat("vi-VN").format(value)} ₫`;
-  const status = importRow.status || "Đang nhập";
-  const isCompleted = status === "Đã hoàn tất";
   const rowsHtml = details.map(item => `
     <tr>
       <td><div class="import-product"><span class="import-product-icon material-symbols-outlined" aria-hidden="true">deployed_code</span><span>${escapeHtml(item.productName)}</span></div></td>
@@ -232,33 +221,14 @@ export async function openViewImport(importRow) {
       <td class="import-total-cell">${formatMoney(item.thanhTien)}</td>
     </tr>`).join("");
 
-  backdrop.innerHTML = `
-    <section class="modal import-detail-modal" role="dialog" aria-modal="true" aria-labelledby="import-detail-title">
-      <header class="import-detail-header ${isCompleted ? "import-status-completed" : "import-status-pending"}">
-        <div class="import-detail-title-icon material-symbols-outlined" aria-hidden="true">description</div>
-        <div class="import-detail-header-main">
-          <div class="import-summary">
-            <div class="import-summary-item"><span class="import-summary-icon material-symbols-outlined" aria-hidden="true">calendar_month</span><div><span class="import-summary-label">NGÀY NHẬP</span><strong>${formatDate(importData?.date || importRow.date)}</strong></div></div>
-            <div class="import-summary-item"><span class="import-summary-icon material-symbols-outlined" aria-hidden="true">business</span><div><span class="import-summary-label">NHÀ CUNG CẤP</span><strong>${escapeHtml(importData?.supplierName || importRow.supplier)}</strong></div></div>
-          </div>
-        </div>
-        <span class="import-status"><span></span>${escapeHtml(status)}</span>
-      </header>
-      <div class="import-detail-content">
-        <div class="import-products-heading"><h3>DANH SÁCH SẢN PHẨM</h3><span>${details.length} sản phẩm</span></div>
-        <div class="import-products-table-wrap">
-          <div class="import-products-scroll">
-            <table class="import-products-table">
-              <thead><tr><th>SẢN PHẨM</th><th>SỐ LƯỢNG</th><th>ĐƠN GIÁ</th><th>THÀNH TIỀN</th></tr></thead>
-              <tbody>${rowsHtml || "<tr><td colspan=\"4\" class=\"import-empty\">Không có chi tiết</td></tr>"}</tbody>
-            </table>
-          </div>
-          <div class="import-grand-total"><strong>Tổng tiền thanh toán</strong><strong>${formatMoney(total)}</strong></div>
-        </div>
-      </div>
-    </section>`;
-
-  detailPanel.innerHTML = backdrop.querySelector("section").innerHTML;
+  detailPanel.innerHTML = `
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead><tr><th>SẢN PHẨM</th><th>SỐ LƯỢNG</th><th>ĐƠN GIÁ</th><th>THÀNH TIỀN</th></tr></thead>
+        <tbody>${rowsHtml || "<tr><td colspan=\"4\" class=\"import-empty\">Không có chi tiết</td></tr>"}</tbody>
+      </table>
+    </div>
+    <div class="detail-total"><strong>Tổng tiền thanh toán</strong><strong>${formatMoney(total)}</strong></div>`;
   detailPanel.classList.remove("promotion-detail-panel");
-  document.querySelectorAll("#imports-body .master-card").forEach(card => card.classList.toggle("active", card.dataset.rowId === String(importRow.rawId)));
+  document.querySelectorAll("#imports-body tr").forEach(card => card.classList.toggle("active", card.dataset.rowId === String(importRow.rawId)));
 }

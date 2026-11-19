@@ -8,10 +8,15 @@
   <button type="button" class="promo-tab" data-promo-tab="voucher">Khuyến mãi theo voucher</button>
 </div>
 
-<section class="master-detail promo-panel" data-promo-panel="programs">
+<section class="master-detail promo-panel promotions-layout" data-promo-panel="programs">
   <div class="master-list view-card">
-    <h2>Danh sách chương trình</h2>
-    <div id="programs-body" class="master-list-items"></div>
+    <div class="list-heading"><h2>Danh sách chương trình</h2><span id="programs-count"></span></div>
+    <div class="table-wrap master-table-wrap">
+      <table class="data-table master-table">
+        <thead><tr><th>Mã KM</th><th>Tên chương trình</th><th>Thời gian</th><th>CTKM</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody id="programs-body"></tbody>
+      </table>
+    </div>
   </div>
   <section id="program-detail-panel" class="detail-panel view-card">
     <div class="detail-placeholder">

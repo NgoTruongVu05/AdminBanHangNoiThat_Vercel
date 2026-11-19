@@ -7,10 +7,15 @@
   <button class="btn" id="add-btn"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>Tạo phiếu
       nhập</span></button>
 </div>
-<section class="master-detail">
+<section class="master-detail inventory-layout">
   <div class="master-list view-card">
-    <h2>Danh sách phiếu nhập kho</h2>
-    <div id="imports-body" class="master-list-items"></div>
+    <div class="list-heading"><h2>Danh sách phiếu nhập kho</h2><span id="imports-count"></span></div>
+    <div class="table-wrap master-table-wrap">
+      <table class="data-table master-table">
+        <thead><tr><th>Mã phiếu</th><th>Nhà cung cấp</th><th>Ngày nhập</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody id="imports-body"></tbody>
+      </table>
+    </div>
   </div>
   <section id="import-detail-panel" class="detail-panel view-card">
     <div class="detail-placeholder">

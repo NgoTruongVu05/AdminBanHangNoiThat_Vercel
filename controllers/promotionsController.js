@@ -57,14 +57,18 @@ async function loadAndRender(selectedProgramId = null) {
   const body = document.getElementById("programs-body");
   if (body) {
     body.innerHTML = programs.map(program => `
-      <article class="master-card" data-view-program="${escapeHtml(program.id)}">
-        <div class="master-card-top"><span class="master-card-code">${escapeHtml(program.id)}</span><span class="tag ${Number(program.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(program.status)}</span></div>
-        <div class="master-card-title">${escapeHtml(program.name)}</div>
-        <div class="master-card-meta"><span class="material-symbols-outlined">date_range</span>${escapeHtml(program.ngayBD)} – ${escapeHtml(program.ngayKT)}<span>•</span>${program.count} CTKM</div>
-        <div class="master-card-actions"><span>THAO TÁC</span>${Number(program.isDeleted) === 1 ? `<button type="button" class="btn danger" data-program-delete="${escapeHtml(program.id)}">${materialIcon("delete")}<span>Xóa</span></button>` : ""}<button type="button" class="btn alt" data-program-edit="${escapeHtml(program.id)}">${materialIcon("edit")}<span>Sửa</span></button><button type="button" class="btn ${Number(program.trangThai) === 0 ? "success" : ""}" data-program-toggle="${escapeHtml(program.id)}">${materialIcon(Number(program.trangThai) === 0 ? "lock_open" : "lock")}<span>${Number(program.trangThai) === 0 ? "Mở khóa" : "Khóa"}</span></button></div>
-      </article>
+      <tr data-view-program="${escapeHtml(program.id)}">
+        <td class="code">${escapeHtml(program.id)}</td>
+        <td><b>${escapeHtml(program.name)}</b><div class="sub">${escapeHtml(program.note || "")}</div></td>
+        <td class="mono">${escapeHtml(program.ngayBD)}<br>→ ${escapeHtml(program.ngayKT)}</td>
+        <td><span class="tag">${program.count}</span></td>
+        <td><span class="tag ${Number(program.trangThai) === 0 ? "locked" : "green"}">${escapeHtml(program.status)}</span></td>
+        <td class="actions">${Number(program.isDeleted) === 1 ? `<button type="button" class="icon-btn danger" title="Xóa" data-program-delete="${escapeHtml(program.id)}">${materialIcon("delete")}</button>` : ""}<button type="button" class="icon-btn" title="Sửa" data-program-edit="${escapeHtml(program.id)}">${materialIcon("edit")}</button><button type="button" class="icon-btn" title="${Number(program.trangThai) === 0 ? "Mở khóa" : "Khóa"}" data-program-toggle="${escapeHtml(program.id)}">${materialIcon(Number(program.trangThai) === 0 ? "lock_open" : "lock")}</button></td>
+      </tr>
     `).join("");
-    body.querySelectorAll(".master-card").forEach(card => {
+    const count = document.getElementById("programs-count");
+    if (count) count.textContent = `${programs.length} chương trình`;
+    body.querySelectorAll("tr").forEach(card => {
       card.onclick = event => {
         if (event.target.closest("button")) return;
         Promise.resolve(openViewProgram(card.dataset.viewProgram)).catch(error => console.error(error));
@@ -220,19 +224,10 @@ export async function openViewProgram(programId) {
   }
   const promotions = await getPromotions();
   const rules = promotions.filter(item => String(item.programId) === String(programId) && item.type !== "(Chưa có CTKM)");
-  const programs = await getPrograms();
-  const program = programs.find(item => String(item.id) === String(programId));
-  const programName = program ? program.name : programId;
-
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop";
-
-  const status = program?.status || "Đang áp dụng";
-  const isCompleted = Number(program?.trangThai ?? 1) === 1;
   const rowsHtml = rules.length ? rules.map(item => `
     <tr>
-      <td><span class="tag">${escapeHtml(item.type)}</span></td>
       <td>${escapeHtml(displayValue(item.sanPham || item.maVoucher))}</td>
+      <td><span class="tag">${escapeHtml(item.type)}</span></td>
       <td>${escapeHtml(displayValue(item.minTotal))}</td>
       <td>${escapeHtml(displayValue(`${item.soLuongHienTai || item.soLuong}/${item.soLuong}`))}</td>
       <td>${escapeHtml(displayValue(item.mucGiam))}</td>
@@ -240,36 +235,15 @@ export async function openViewProgram(programId) {
     </tr>
   `).join("") : `<tr><td colspan="6">Chưa có CTKM nào.</td></tr>`;
 
-  backdrop.innerHTML = `
-    <section class="modal import-detail-modal promotion-detail-modal" role="dialog" aria-modal="true" aria-labelledby="promotion-detail-title">
-      <header class="import-detail-header ${isCompleted ? "import-status-completed" : "import-status-pending"}">
-        <div class="import-detail-title-icon material-symbols-outlined" aria-hidden="true">local_offer</div>
-        <div class="import-detail-header-main">
-          <div class="import-summary">
-            <div class="import-summary-item"><span class="import-summary-icon material-symbols-outlined" aria-hidden="true">calendar_month</span><div><span class="import-summary-label">NGÀY BẮT ĐẦU</span><strong>${escapeHtml(program?.ngayBD || "")}</strong></div></div>
-            <div class="import-summary-item"><span class="import-summary-icon material-symbols-outlined" aria-hidden="true">event</span><div><span class="import-summary-label">NGÀY KẾT THÚC</span><strong>${escapeHtml(program?.ngayKT || "")}</strong></div></div>
-            ${program?.note ? `<div class="import-summary-item"><span class="import-summary-icon material-symbols-outlined" aria-hidden="true">notes</span><div><span class="import-summary-label">GHI CHÚ</span><strong>${escapeHtml(program.note)}</strong></div></div>` : ""}
-          </div>
-        </div>
-        <span class="import-status"><span></span>${escapeHtml(status)}</span>
-      </header>
-      <div class="import-detail-content">
-        <div class="import-products-heading"><h3>DANH SÁCH CTKM</h3><span>${rules.length} CTKM</span></div>
-        <div class="import-products-table-wrap">
-          <div class="import-products-scroll">
-            <table class="import-products-table">
-              <thead><tr><th>LOẠI</th><th>SẢN PHẨM / MÃ VOUCHER</th><th>TỔNG TỐI THIỂU</th><th>SỐ LƯỢNG</th><th>MỨC GIẢM</th><th>TRẠNG THÁI</th></tr></thead>
-              <tbody>${rowsHtml || "<tr><td colspan=\"6\" class=\"import-empty\">Không có CTKM</td></tr>"}</tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-  `;
-
-  detailPanel.innerHTML = backdrop.querySelector("section").innerHTML;
+  detailPanel.innerHTML = `
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead><tr><th>SẢN PHẨM / MÃ VOUCHER</th><th>LOẠI</th><th>TỔNG TỐI THIỂU</th><th>SỐ LƯỢNG</th><th>MỨC GIẢM</th><th>TRẠNG THÁI</th></tr></thead>
+        <tbody>${rowsHtml || "<tr><td colspan=\"6\" class=\"import-empty\">Không có CTKM</td></tr>"}</tbody>
+      </table>
+    </div>`;
   detailPanel.classList.add("promotion-detail-panel");
-  document.querySelectorAll("#programs-body .master-card").forEach(card => card.classList.toggle("active", card.dataset.viewProgram === String(programId)));
+  document.querySelectorAll("#programs-body tr").forEach(card => card.classList.toggle("active", card.dataset.viewProgram === String(programId)));
 }
 
 export async function openEditProgram(programId) {

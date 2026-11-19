@@ -3,13 +3,17 @@ import { cached, date, field, moneyText, invalidate } from "./modelUtils.js";
 
 export async function getOrders() {
   return cached("orders", async () => {
-    const raw = await fetchTables(["HOADON", "KHACHHANG"]);
+    const raw = await fetchTables(["HOADON", "KHACHHANG", "NHANVIEN"]);
     const customers = raw.KHACHHANG || [];
+    const staff = raw.NHANVIEN || [];
     return (raw.HOADON || []).map(item => {
       const customer = customers.find(entry =>
         String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang"))
       );
       const trangThai = Number(field(item, "trangThai") ?? 1);
+      const employee = staff.find(entry =>
+        String(field(entry, "cccd")) === String(field(item, "cccd_nhanVien"))
+      );
       const statusText =
         trangThai === 0 ? "Đã hủy" : trangThai === 2 ? "Đã hoàn thành" : "Đang duyệt";
       return [
@@ -17,19 +21,29 @@ export async function getOrders() {
         field(customer || {}, "hoTen") || "Khách hàng",
         date(field(item, "ngayDat")),
         moneyText(field(item, "tongTien")),
+        moneyText(field(item, "thanhTien") ?? field(item, "tongTien")),
         statusText,
         field(item, "id_hoaDon"),
-        trangThai
+        trangThai,
+        field(employee || {}, "hoTen") || "—",
+        date(field(item, "ngayGiao"))
       ];
     });
   });
 }
 
 export async function getOrderById(orderId) {
-  const raw = await fetchTables(["HOADON", "KHACHHANG", "NHANVIEN"]);
+  const raw = await fetchTables([
+    "HOADON", "KHACHHANG", "NHANVIEN", "DIACHIGIAOHANG",
+    "CHUONGTRINHKHUYENMAI", "KMTHEOHD", "KMTHEOVOUCHER"
+  ]);
   const orders = raw.HOADON || [];
   const customers = raw.KHACHHANG || [];
   const staff = raw.NHANVIEN || [];
+  const addresses = raw.DIACHIGIAOHANG || [];
+  const programs = raw.CHUONGTRINHKHUYENMAI || [];
+  const invoicePromotions = raw.KMTHEOHD || [];
+  const voucherPromotions = raw.KMTHEOVOUCHER || [];
   const item = orders.find(entry => String(field(entry, "id_hoaDon")) === String(orderId));
   if (!item) return null;
   const customer = customers.find(entry =>
@@ -38,18 +52,44 @@ export async function getOrderById(orderId) {
   const employee = staff.find(entry =>
     String(field(entry, "cccd")) === String(field(item, "cccd_nhanVien"))
   );
+  const address = addresses.find(entry =>
+    String(field(entry, "id_diaChi")) === String(field(item, "id_diaChiGiaoHang"))
+  );
   const trangThai = Number(field(item, "trangThai") ?? 1);
   const statusText =
     trangThai === 0 ? "Đã hủy" : trangThai === 2 ? "Đã hoàn thành" : "Đang duyệt";
+  const programId = field(item, "id_maCTKM");
+  const voucherId = field(item, "id_voucher");
+  const invoicePromotion = invoicePromotions.find(entry =>
+    String(field(entry, "id_maCTKM")) === String(programId)
+  );
+  const voucherPromotion = voucherPromotions.find(entry =>
+    String(field(entry, "id_voucher")) === String(voucherId)
+  );
+  const program = programs.find(entry =>
+    String(field(entry, "id_maCTKM")) === String(programId)
+  );
+  const promotionLabels = [];
+  if (invoicePromotion) {
+    promotionLabels.push(`CTKM hóa đơn: ${field(program || {}, "tenCTKM") || programId} (-${field(invoicePromotion, "phanTram") || 0}%)`);
+  }
+  if (voucherPromotion) {
+    promotionLabels.push(`Voucher: ${voucherId} (-${field(voucherPromotion, "phanTram") || 0}%)`);
+  }
+  const total = Number(field(item, "tongTien") || 0);
+  const payableTotal = Number(field(item, "thanhTien") ?? total);
   return {
     rawId: field(item, "id_hoaDon"),
     id: `HD${field(item, "id_hoaDon")}`,
     date: date(field(item, "ngayDat")),
     deliveryDate: date(field(item, "ngayGiao")),
-    address: field(item, "diChiGiaoHang") || "",
+    address: address ? [field(address, "duong")].filter(Boolean).join(", ") : "",
     customerName: field(customer || {}, "hoTen") || "Khách hàng",
     employeeName: field(employee || {}, "hoTen") || "",
-    total: Number(field(item, "tongTien") || 0),
+    total,
+    payableTotal,
+    promotionAmount: Math.max(0, total - payableTotal),
+    promotionLabels,
     statusText,
     trangThai
   };

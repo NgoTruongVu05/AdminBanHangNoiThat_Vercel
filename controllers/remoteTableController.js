@@ -50,12 +50,12 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
     imports: {
       rows: data.imports,
       body: "imports-body",
-      rowSelector: ".master-card",
+      rowSelector: "tr",
       defaultKeys: ["id", "supplier"],
       fields: { date: "Ngày nhập", count: "Số dòng SP" },
       sideFilter: { selector: "#import-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đang nhập", "Đã hoàn tất"] },
       search: row => `${row.id} ${row.supplier}`,
-      render: (row, index) => `<article class="master-card" data-row-index="${index}" data-row-id="${escape(row.rawId)}"><div class="master-card-top"><span class="master-card-code">${escape(row.id)}</span><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></div><div class="master-card-title">${row.count} mặt hàng</div><div class="master-card-meta"><span class="material-symbols-outlined">calendar_month</span>${escape(row.date)}<span>•</span>${escape(row.supplier)}</div>${row.status === "Đang nhập" ? `<div class="master-card-actions"><span>THAO TÁC</span><button type="button" class="btn alt" data-edit-index="${index}">Sửa</button><button type="button" class="btn" data-approve-index="${index}">Duyệt phiếu</button></div>` : ""}</article>`
+      render: (row, index) => `<tr data-row-index="${index}" data-row-id="${escape(row.rawId)}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.supplier)}</b><div class="sub">${row.count} mặt hàng</div></td><td class="mono">${escape(row.date)}</td><td class="money">${escape(money(row.total))}</td><td><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></td><td class="actions">${row.status === "Đang nhập" ? `<button type="button" class="icon-btn" title="Sửa" data-edit-index="${index}">${materialIcon("edit")}</button><button type="button" class="icon-btn" title="Duyệt phiếu" data-approve-index="${index}">${materialIcon("check_circle")}</button>` : `<span class="muted">—</span>`}</td></tr>`
     },
     promotions: {
       rows: data.promotions,
