@@ -159,34 +159,32 @@ function renderCustomerFinancialTable(data) {
     : "";
 }
 
-function renderProductFinancialTable(data) {
+function renderProductFinancialTable(data, selectedProductId = null) {
   const selectedYear = document.querySelector("#product-year-select").value;
   const products = new Map();
   data.productFinancialOrders.forEach(item => {
     if (item.year !== selectedYear) return;
     if (!products.has(String(item.productId))) {
       products.set(String(item.productId), {
+        id: item.productId,
         name: item.productName,
-        quarters: [0, 0, 0, 0]
+        total: 0
       });
     }
-    const quarter = Math.floor(new Date(`${item.date}T00:00:00`).getMonth() / 3);
-    products.get(String(item.productId)).quarters[quarter] += item.amount;
+    products.get(String(item.productId)).total += item.amount;
   });
-  const rows = [...products.values()].map(product => ({
-    ...product,
-    total: product.quarters.reduce((sum, value) => sum + value, 0)
-  })).sort((a, b) => b.total - a.total);
-  const totals = [0, 1, 2, 3].map(index =>
-    rows.reduce((sum, product) => sum + product.quarters[index], 0)
-  );
+  const rows = [...products.values()].sort((a, b) => b.total - a.total);
+  const total = rows.reduce((sum, product) => sum + product.total, 0);
   document.querySelector("#product-financial-head").innerHTML =
-    "<tr><th>Sản phẩm</th><th>Quý 1</th><th>Quý 2</th><th>Quý 3</th><th>Quý 4</th><th>Tổng cộng</th></tr>";
+    "<tr><th>Sản phẩm</th><th>Tổng doanh thu</th></tr>";
   document.querySelector("#product-financial-body").innerHTML = rows.length
-    ? rows.map(product => `<tr><td><b>${product.name}</b></td>${product.quarters.map(value => `<td>${money(value)}</td>`).join("")}<td><b>${money(product.total)}</b></td></tr>`).join("")
-    : '<tr><td colspan="6" class="empty-state">Chưa có dữ liệu hóa đơn theo sản phẩm.</td></tr>';
+    ? rows.map(product => {
+      const selected = String(product.id) === String(selectedProductId);
+      return `<tr class="product-chart-row${selected ? " selected" : ""}" data-product-id="${encodeURIComponent(String(product.id))}"><td><button class="product-chart-select" type="button" aria-pressed="${selected}">${product.name}</button></td><td><b>${money(product.total)}</b></td></tr>`;
+    }).join("")
+    : '<tr><td colspan="2" class="empty-state">Chưa có dữ liệu hóa đơn theo sản phẩm.</td></tr>';
   document.querySelector("#product-financial-foot").innerHTML = rows.length
-    ? `<tr><th>TỔNG CỘNG</th>${totals.map(value => `<th>${money(value)}</th>`).join("")}<th>${money(totals.reduce((sum, value) => sum + value, 0))}</th></tr>`
+    ? `<tr><th>TỔNG CỘNG</th><th>${money(total)}</th></tr>`
     : "";
 }
 
@@ -260,10 +258,7 @@ function renderFinancialTable(data) {
 
 export async function initDashboard(query, rerender) {
   const data = await getDashboardData();
-  const maxRevenue = Math.max(...data.months.map(month => month.value), 1);
-  const totalWoodProducts = data.woods.reduce((sum, item) => sum + item.count, 0);
-  const totalWoodStock = data.woods.reduce((sum, item) => sum + item.stock, 0);
-  const totalWoodSales = data.woods.reduce((sum, item) => sum + item.sales, 0);
+  let selectedProductId = null;
   const profit = data.revenue - data.importCost;
   const margin = data.revenue ? `${(profit / data.revenue * 100).toFixed(1)}%` : "0%";
   document.querySelector("#revenue-total").textContent = money(data.revenue);
@@ -283,37 +278,117 @@ export async function initDashboard(query, rerender) {
   document.querySelector("#completed-imports").textContent = `${data.completedImportCount} đợt`;
   document.querySelector("#product-count").textContent = `${data.productCount} mẫu`;
   document.querySelector("#customer-count").textContent = `${data.customerCount} hồ sơ`;
-  document.querySelector("#revenue-period").textContent =
-    `${data.months[0].label} - ${data.months[data.months.length - 1].label}`;
-  const latestMonth = data.months[data.months.length - 1];
-  document.querySelector("#latest-month-summary").textContent = `Doanh thu: ${money(latestMonth.value)}`;
-  document.querySelector("#latest-month-orders").textContent = `${latestMonth.orderCount} đơn`;
-  document.querySelector("#wood-summary").textContent = `${totalWoodProducts} mẫu · ${totalWoodStock} tồn kho`;
-  document.querySelector("#wood-distribution").innerHTML = data.woods.map(item => {
-    const percentage = totalWoodProducts ? Math.round(item.count / totalWoodProducts * 100) : 0;
-    return `<span class="wood-segment" style="width:${percentage}%"></span>`;
-  }).join("");
-  document.querySelector("#wood-distribution-labels").innerHTML = data.woods.map(item => {
-    const percentage = totalWoodProducts ? Math.round(item.count / totalWoodProducts * 100) : 0;
-    return `<span>${item.name} (${percentage}%)</span>`;
-  }).join("");
-  document.querySelector("#revenue-chart").innerHTML = data.months.map((month, index) => {
-    const height = month.value ? Math.max(month.value / maxRevenue * 100, 4) : 0;
-    return `<div class="bar-wrap" title="${money(month.value)}"><div class="bar ${index === data.months.length - 1 ? "active" : ""}" style="height:${height}%"></div><span class="bar-label">${month.label}</span></div>`;
-  }).join("");
-  document.querySelector("#wood-list").innerHTML = data.woods.length
-    ? data.woods.map(item => {
-      const percentage = totalWoodProducts ? Math.round(item.count / totalWoodProducts * 100) : 0;
-      return `<div class="wood-item"><div class="wood-row"><b><i class="wood-swatch"></i>${item.name}</b><span>${item.count} mẫu (${percentage}%)</span></div><div class="progress"><i style="width:${percentage}%"></i></div><div class="wood-details"><span>♧ Tồn kho: <b>${item.stock} sp</b></span><span>Doanh số: <b>${money(item.sales)}</b></span></div></div>`;
-    }).join("")
-    : "<p>Chưa có dữ liệu loại gỗ.</p>";
-  const leadingWood = [...data.woods].sort((a, b) => b.sales - a.sales)[0];
-  const summary = document.querySelector("#wood-summary-note");
-  if (summary) {
-    summary.innerHTML = leadingWood
-     ? `<span>Chất liệu chủ lực:</span><strong>⚒ ${leadingWood.name} chiếm ${totalWoodSales ? (leadingWood.sales / totalWoodSales * 100).toFixed(1) : "0.0"}% doanh số</strong>`
-     : "";
-  }
+  const chartPeriodMode = document.querySelector("#chart-period-mode");
+  const chartMonthControls = document.querySelector("#chart-month-controls");
+  const chartRange = document.querySelector("#chart-month-range");
+  const customMonthsField = document.querySelector("#chart-custom-months-field");
+  const customMonthsInput = document.querySelector("#chart-custom-months");
+  const productYearSelect = document.querySelector("#product-year-select");
+  const transactionDates = data.financialOrders
+    .map(item => new Date(`${dateKey(item.date)}T00:00:00`))
+    .filter(date => !Number.isNaN(date.getTime()))
+    .sort((a, b) => a - b);
+  const latestTransaction = transactionDates[transactionDates.length - 1] || new Date();
+  const latestMonthDate = new Date(latestTransaction.getFullYear(), latestTransaction.getMonth(), 1);
+  const renderRevenueChart = () => {
+    const isQuarterMode = chartPeriodMode.value === "quarter";
+    const monthCount = chartRange.value === "custom"
+      ? Number(customMonthsInput.value)
+      : Number(chartRange.value);
+    if (!isQuarterMode && (!Number.isSafeInteger(monthCount) || monthCount < 1)) {
+      customMonthsInput.setCustomValidity("Vui lòng nhập số tháng nguyên lớn hơn 0.");
+      customMonthsInput.reportValidity();
+      return;
+    }
+    customMonthsInput.setCustomValidity("");
+    const selectedYear = Number(productYearSelect.value) || latestTransaction.getFullYear();
+    const periods = isQuarterMode
+      ? [1, 2, 3, 4].map(quarter => ({
+        key: `${selectedYear}-Q${quarter}`,
+        label: `Quý ${quarter}`,
+        value: 0,
+        orderIds: new Set()
+      }))
+      : Array.from({ length: monthCount }, (_, index) => {
+        const monthDate = new Date(
+          latestMonthDate.getFullYear(),
+          latestMonthDate.getMonth() - monthCount + index + 1,
+          1
+        );
+        const key = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`;
+        return {
+          key,
+          label: monthDate.toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" }),
+          value: 0,
+          orderIds: new Set()
+        };
+      });
+    const periodsByKey = new Map(periods.map(period => [period.key, period]));
+    const revenueEntries = data.productFinancialOrders.filter(item =>
+      selectedProductId === null || String(item.productId) === selectedProductId
+    );
+    revenueEntries.forEach(item => {
+      const date = dateKey(item.date);
+      let period;
+      if (isQuarterMode) {
+        const transactionDate = new Date(`${date}T00:00:00`);
+        if (Number.isNaN(transactionDate.getTime()) || transactionDate.getFullYear() !== selectedYear) return;
+        const quarter = Math.floor(transactionDate.getMonth() / 3) + 1;
+        period = periodsByKey.get(`${selectedYear}-Q${quarter}`);
+      } else {
+        period = periodsByKey.get(date.slice(0, 7));
+      }
+      if (!period) return;
+      period.value += item.amount;
+      if (item.orderId !== null && item.orderId !== undefined) {
+        period.orderIds.add(String(item.orderId));
+      }
+    });
+    const productName = selectedProductId === null
+      ? ""
+      : data.productFinancialOrders.find(item => String(item.productId) === selectedProductId)?.productName || "Sản phẩm";
+    const periodDescription = isQuarterMode
+      ? `theo 4 quý của năm ${selectedYear}`
+      : `theo tháng trong ${monthCount} tháng gần nhất`;
+    document.querySelector("#revenue-chart-title").textContent = selectedProductId
+      ? `Doanh thu ${productName} ${periodDescription}`
+      : `Diễn biến doanh thu sản phẩm ${periodDescription}`;
+    document.querySelector("#revenue-chart-description").textContent =
+      "Đơn vị tính: VNĐ · Doanh thu sản phẩm trong các đơn hàng đã hoàn thành";
+    const latestQuarter = isQuarterMode
+      ? revenueEntries.reduce((latest, item) => {
+        const transactionDate = new Date(`${dateKey(item.date)}T00:00:00`);
+        if (Number.isNaN(transactionDate.getTime()) || transactionDate.getFullYear() !== selectedYear) return latest;
+        return Math.max(latest, Math.floor(transactionDate.getMonth() / 3) + 1);
+      }, 0) || 4
+      : null;
+    const latestPeriod = isQuarterMode ? periods[latestQuarter - 1] : periods[periods.length - 1];
+    document.querySelector("#chart-summary-period").textContent =
+      isQuarterMode ? `Quý ${latestQuarter}` : "Tháng gần nhất";
+    document.querySelector("#latest-month-summary").textContent = `Doanh thu: ${money(latestPeriod.value)}`;
+    document.querySelector("#latest-month-orders").textContent = `${latestPeriod.orderIds.size} đơn`;
+    const maxRevenue = Math.max(...periods.map(period => period.value), 1);
+    document.querySelector("#revenue-chart").innerHTML = periods.map(period => {
+      const height = period.value ? Math.max(period.value / maxRevenue * 100, 4) : 0;
+      return `<div class="bar-wrap" title="${money(period.value)}"><div class="bar" style="height:${height}%"></div><span class="bar-label">${period.label}</span></div>`;
+    }).join("");
+  };
+  chartPeriodMode.onchange = () => {
+    chartMonthControls.hidden = chartPeriodMode.value !== "month";
+    renderRevenueChart();
+  };
+  chartRange.onchange = () => {
+    customMonthsField.hidden = chartRange.value !== "custom";
+    renderRevenueChart();
+  };
+  customMonthsInput.onchange = renderRevenueChart;
+  document.querySelector("#product-financial-body").onclick = event => {
+    const row = event.target.closest(".product-chart-row");
+    if (!row) return;
+    selectedProductId = decodeURIComponent(row.dataset.productId);
+    renderProductFinancialTable(data, selectedProductId);
+    renderRevenueChart();
+  };
 
   const years = [...new Set([...data.financialOrders, ...data.financialImports]
     .map(item => dateKey(item.date).slice(0, 4)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
@@ -361,27 +436,19 @@ export async function initDashboard(query, rerender) {
   employeePeriod.onchange();
   renderEmployeeFinancialTable(data);
   renderCustomerFinancialTable(data);
-  const productYears = [...new Set(data.productFinancialOrders.map(item => item.year))].sort((a, b) => b.localeCompare(a));
-  const productYearSelect = document.querySelector("#product-year-select");
+  const productYears = [...new Set(data.financialOrders
+    .map(item => dateKey(item.date).slice(0, 4))
+    .filter(Boolean))].sort((a, b) => b.localeCompare(a));
   productYearSelect.innerHTML = productYears.length
     ? productYears.map(year => `<option value="${year}">${year}</option>`).join("")
     : `<option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>`;
   productYearSelect.value = productYears[0] || String(new Date().getFullYear());
-  document.querySelector("#product-apply").onclick = () => renderProductFinancialTable(data);
-  renderProductFinancialTable(data);
+  document.querySelector("#product-apply").onclick = () => {
+    selectedProductId = null;
+    renderProductFinancialTable(data);
+    renderRevenueChart();
+  };
+  renderProductFinancialTable(data, selectedProductId);
+  renderRevenueChart();
   renderFinancialTable(data);
-  const statisticsTabs = document.querySelectorAll("[data-statistics-tab]");
-  const statisticsPanels = document.querySelectorAll("[data-statistics-panel]");
-  statisticsTabs.forEach(tab => {
-    tab.onclick = () => {
-      const selectedTab = tab.dataset.statisticsTab;
-      statisticsTabs.forEach(item => item.classList.toggle("active", item === tab));
-      statisticsPanels.forEach(panel => {
-        panel.hidden = panel.dataset.statisticsPanel !== selectedTab;
-      });
-    };
-  });
-  statisticsPanels.forEach(panel => {
-    panel.hidden = panel.dataset.statisticsPanel !== "financial";
-  });
 }

@@ -9,7 +9,6 @@ export async function getDashboardData() {
     "CHITIETPHIEUNHAP",
     "SANPHAM",
     "KHACHHANG",
-    "LOAIGO",
     "NHANVIEN"
   ]);
   const orders = raw.HOADON || [];
@@ -27,6 +26,7 @@ export async function getDashboardData() {
     return sum + (detailsTotal || Number(field(item, "tongTien") || 0));
   }, 0);
   const financialOrders = completedOrders.map(item => ({
+    orderId: field(item, "id_hoaDon"),
     date: field(item, "ngayDat"),
     amount: Number(field(item, "tongTien") || 0),
     employeeId: field(item, "cccd_nhanVien"),
@@ -44,23 +44,12 @@ export async function getDashboardData() {
     String(field(item, "id_sanPham")),
     field(item, "tenSanPham") || "Chưa xác định"
   ]));
-  const completedOrderIds = new Set(completedOrders.map(item => String(field(item, "id_hoaDon"))));
-  const productWoodIds = new Map(products.map(item => [
-    String(field(item, "id_sanPham")),
-    String(field(item, "id_maGo"))
-  ]));
-  const woodSales = new Map();
-  orderDetails
-    .filter(detail => completedOrderIds.has(String(field(detail, "id_hoaDon"))))
-    .forEach(detail => {
-      const woodId = productWoodIds.get(String(field(detail, "id_sanPham")));
-      if (woodId) woodSales.set(woodId, (woodSales.get(woodId) || 0) + Number(field(detail, "thanhTien") || 0));
-    });
   const productFinancialOrders = completedOrders.flatMap(order => {
     const year = String(field(order, "ngayDat") || "").slice(0, 4);
     return orderDetails
       .filter(detail => String(field(detail, "id_hoaDon")) === String(field(order, "id_hoaDon")))
       .map(detail => ({
+        orderId: field(order, "id_hoaDon"),
         date: field(order, "ngayDat"),
         year,
         productId: field(detail, "id_sanPham"),
@@ -81,46 +70,6 @@ export async function getDashboardData() {
     .filter(item => Number(field(item, "trangThai") ?? 1) !== 0)
     .reduce((sum, item) => sum + Number(field(item, "soLuong") || 0), 0);
 
-  const transactionDates = completedOrders
-    .map(item => new Date(field(item, "ngayDat")))
-    .filter(date => !Number.isNaN(date.getTime()));
-  const latestDate = transactionDates.length
-    ? new Date(Math.max(...transactionDates.map(date => date.getTime())))
-    : new Date();
-  const months = Array.from({ length: 6 }, (_, index) => {
-    const date = new Date(latestDate.getFullYear(), latestDate.getMonth() - 5 + index, 1);
-    return {
-      key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
-      label: date.toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" }),
-      value: 0,
-      orderCount: 0
-    };
-  });
-  const monthMap = new Map(months.map(month => [month.key, month]));
-  completedOrders.forEach(item => {
-    const date = new Date(field(item, "ngayDat"));
-    if (Number.isNaN(date.getTime())) return;
-    const month = monthMap.get(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`);
-    if (month) {
-      month.value += Number(field(item, "tongTien") || 0);
-      month.orderCount += 1;
-    }
-  });
-
-  const woods = (raw.LOAIGO || []).map(item => {
-    const id = field(item, "id_maGo");
-    const woodProducts = products.filter(product =>
-      String(field(product, "id_maGo")) === String(id) &&
-      Number(field(product, "trangThai") ?? 1) !== 0
-    );
-    return {
-      name: field(item, "tenGo") || "",
-      count: woodProducts.length,
-      stock: woodProducts.reduce((sum, product) => sum + Number(field(product, "soLuong") || 0), 0),
-      sales: woodSales.get(String(id)) || 0
-    };
-  }).filter(item => item.count > 0);
-
   return {
     revenue,
     completedOrderCount: completedOrders.length,
@@ -129,8 +78,6 @@ export async function getDashboardData() {
     stock,
     productCount: products.filter(item => Number(field(item, "trangThai") ?? 1) !== 0).length,
     customerCount: (raw.KHACHHANG || []).length,
-    months,
-    woods,
     financialOrders,
     financialImports,
     employees,

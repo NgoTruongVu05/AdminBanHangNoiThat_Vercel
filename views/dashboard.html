@@ -34,38 +34,68 @@
   </div>
 </div>
 <div class="dashboard-grid">
+  <section class="card product-financial-card">
+    <div class="card-head">
+      <div>
+        <h2>Thống kê tiền hóa đơn theo sản phẩm</h2>
+        <p>Tổng tiền hóa đơn theo từng sản phẩm qua các năm</p>
+      </div>
+    </div>
+    <div class="financial-filters">
+      <label>Năm
+        <select id="product-year-select"></select>
+      </label>
+      <button class="btn" id="product-apply" type="button">Xem thống kê</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table financial-table product-financial-table">
+        <thead id="product-financial-head"></thead>
+        <tbody id="product-financial-body"></tbody>
+        <tfoot id="product-financial-foot"></tfoot>
+      </table>
+    </div>
+  </section>
   <section class="card">
     <div class="card-head">
       <div>
-        <h2>Diễn biến doanh thu & chi phí trong 6 tháng gần nhất</h2>
-          <p>Đơn vị tính: VNĐ · Dữ liệu đối chiếu doanh thu bán hàng thực thu và chi phí nhập xưởng</p>
-      </div><span class="tag" id="revenue-period">6 THÁNG GẦN NHẤT</span>
+        <h2 id="revenue-chart-title">Diễn biến doanh thu đơn hàng</h2>
+        <p id="revenue-chart-description">Đơn vị tính: VNĐ · Doanh thu sản phẩm trong các đơn hàng đã hoàn thành</p>
+      </div>
     </div>
-    <div class="chart-summary"><span>Tháng gần nhất</span><strong id="latest-month-summary">Doanh thu: 0 ₫</strong><span>Số đơn: <b id="latest-month-orders">0 đơn</b></span></div>
+    <div class="chart-controls">
+      <label>Kiểu biểu đồ
+        <select id="chart-period-mode">
+          <option value="quarter" selected>Theo quý</option>
+          <option value="month">Theo tháng</option>
+        </select>
+      </label>
+      <div class="chart-month-controls" id="chart-month-controls" hidden>
+        <label>Khoảng tháng
+          <select id="chart-month-range">
+            <option value="3">3 tháng gần nhất</option>
+            <option value="6" selected>6 tháng gần nhất</option>
+            <option value="9">9 tháng gần nhất</option>
+            <option value="12">12 tháng gần nhất</option>
+            <option value="custom">Tùy chỉnh</option>
+          </select>
+        </label>
+        <label id="chart-custom-months-field" hidden>Số tháng
+          <input id="chart-custom-months" type="number" min="1" step="1" value="6" required>
+        </label>
+      </div>
+    </div>
+    <div class="chart-summary"><span id="chart-summary-period">Quý gần nhất</span><strong id="latest-month-summary">Doanh thu: 0 ₫</strong><span>Số đơn: <b id="latest-month-orders">0 đơn</b></span></div>
     <div class="chart" id="revenue-chart"></div>
-  </section>
-  <section class="card">
-    <div class="card-head"><div><h2>Cơ cấu sản phẩm theo loại gỗ</h2><p class="sub">Tỷ trọng phân bổ mẫu thiết kế &amp; doanh thu theo chất liệu gỗ (LOAIGO)</p></div><span class="card-meta" id="wood-summary"></span></div>
-    <div class="wood-distribution" id="wood-distribution"></div>
-    <div class="wood-distribution-labels" id="wood-distribution-labels"></div>
-    <div class="wood-list" id="wood-list"></div>
-    <div class="wood-summary-note" id="wood-summary-note"></div>
   </section>
 </div>
 <section class="card statistics-card">
   <div class="statistics-heading">
     <div>
       <h2>Sổ sách thống kê chi tiết</h2>
-      <p>Mỗi danh mục số liệu có bộ lọc và bảng riêng để theo dõi.</p>
+      <p>Các mục thống kê được tách riêng, mỗi mục có bộ lọc và bảng riêng.</p>
     </div>
   </div>
-  <nav class="statistics-tabs" aria-label="Danh mục thống kê">
-    <button class="statistics-tab active" type="button" data-statistics-tab="financial">1. Thống kê tiền hóa đơn (P&amp;L)</button>
-    <button class="statistics-tab" type="button" data-statistics-tab="product">2. Thống kê theo sản phẩm</button>
-    <button class="statistics-tab" type="button" data-statistics-tab="employee">3. Thống kê theo nhân viên</button>
-    <button class="statistics-tab" type="button" data-statistics-tab="customer">4. Thống kê theo khách hàng</button>
-  </nav>
-  <section class="statistics-panel financial-card" data-statistics-panel="financial">
+  <section class="statistics-panel financial-card">
   <div class="card-head">
     <div>
       <h2>Thống kê tiền hóa đơn</h2>
@@ -110,7 +140,7 @@
     </table>
   </div>
   </section>
-  <section class="statistics-panel employee-financial-card" id="employee-financial-card" data-statistics-panel="employee">
+  <section class="statistics-panel employee-financial-card" id="employee-financial-card">
   <div class="card-head">
     <div>
       <h2>Thống kê tiền hóa đơn theo nhân viên</h2>
@@ -143,7 +173,7 @@
     </table>
   </div>
   </section>
-  <section class="statistics-panel customer-financial-card" id="customer-financial-card" data-statistics-panel="customer">
+  <section class="statistics-panel customer-financial-card" id="customer-financial-card">
   <div class="card-head">
     <div>
       <h2>Thống kê tiền hóa đơn theo khách hàng</h2>
@@ -155,27 +185,6 @@
       <thead id="customer-financial-head"></thead>
       <tbody id="customer-financial-body"></tbody>
       <tfoot id="customer-financial-foot"></tfoot>
-    </table>
-  </div>
-  </section>
-  <section class="statistics-panel product-financial-card" id="product-financial-card" data-statistics-panel="product">
-  <div class="card-head">
-    <div>
-      <h2>Thống kê tiền hóa đơn theo sản phẩm</h2>
-      <p>Tổng tiền hóa đơn theo từng sản phẩm qua các năm</p>
-    </div>
-  </div>
-  <div class="financial-filters">
-    <label>Năm
-      <select id="product-year-select"></select>
-    </label>
-    <button class="btn" id="product-apply" type="button">Xem thống kê</button>
-  </div>
-  <div class="table-wrap">
-    <table class="data-table financial-table">
-      <thead id="product-financial-head"></thead>
-      <tbody id="product-financial-body"></tbody>
-      <tfoot id="product-financial-foot"></tfoot>
     </table>
   </div>
   </section>
