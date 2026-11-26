@@ -88,7 +88,8 @@ export async function authenticateAccount(username, password) {
   }
   return {
     username: field(account, "tenDangNhap"),
-    role: staffRole === 1 ? "QUANTRIVIEN" : "NHANVIEN"
+    role: staffRole === 1 ? "QUANTRIVIEN" : "NHANVIEN",
+    employeeId: field(staff || {}, "CCCD")
   };
 }
 

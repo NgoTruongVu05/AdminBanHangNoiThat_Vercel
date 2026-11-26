@@ -16,7 +16,7 @@ export async function getDashboardData() {
   const importDetails = raw.CHITIETPHIEUNHAP || [];
   const orderDetails = raw.CHITIETHOADON || [];
   const products = raw.SANPHAM || [];
-  const completedOrders = orders.filter(item => Number(field(item, "trangThai") ?? 1) === 2);
+  const completedOrders = orders.filter(item => Number(field(item, "trangThai") ?? 1) === 3);
   const completedImports = imports.filter(item => Number(field(item, "trangThai") ?? 0) === 1);
   const revenue = completedOrders.reduce((sum, item) => sum + Number(field(item, "tongTien") || 0), 0);
   const importCost = completedImports.reduce((sum, item) => {

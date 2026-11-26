@@ -44,7 +44,7 @@ export async function getCustomers() {
       );
       const customerOrders = orders.filter(entry =>
         String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang")) &&
-        Number(field(entry, "trangThai") ?? 0) === 2
+        Number(field(entry, "trangThai") ?? 0) === 3
       );
       const defaultAddress = addresses.find(entry =>
         String(field(entry, "id_khachHang")) === String(field(item, "id_khachHang")) &&
