@@ -36,7 +36,16 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       fields: { address: "Địa chỉ", phone: "Liên hệ" },
       sideFilter: { selector: "#supplier-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đã khóa", "Đang hợp tác"] },
       search: row => `${row.id} ${row.name}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td>${escape(row.address)}</td><td class="mono">${escape(row.phone)}</td><td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}" style="transition: background 0.2s;">` +
+        `<td class="font-medium w-20">${escape(row.id)}</td>` +
+        `<td>${escape(row.name)}</td>` +
+        `<td class="w-40">${escape(row.address)}</td>` +
+        `<td class="w-24 font-mono">${escape(row.phone)}</td>` +
+        `<td>` +
+        `<span class="${row.trangThai === 0 ? "locked" : "green"} tag">${escape(row.status)}</span>` +
+        `</td>` +
+        `<td class="actions w-28">${materialIcon("edit")} ${materialIcon("delete")}</td>` +
+        `</tr>`
     },
     customers: {
       rows: data.customers,
@@ -45,7 +54,15 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       fields: { phone: "Số điện thoại", email: "Email", orders: "Đơn hàng" },
       sideFilter: { selector: "#customer-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Bị khóa", "Đang hoạt động"] },
       search: row => `${row.id} ${row.name}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td class="mono">${escape(row.phone)}<div class="sub">${escape(row.email)}</div></td><td><span class="tag">${row.orders} đơn</span></td><td><span class="tag ${row.status === "Bị khóa" ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}" style="transition: background 0.2s;">` +
+        `<td class="font-medium w-20">${escape(row.id)}</td>` +
+        `<td><b>${escape(row.name)}</b></td>` +
+        `<td class="w-24 mono">${escape(row.phone)}</td>` +
+        `<td>${escape(row.email)}</td>` +
+        `<td><span class="tag">${row.orders} đơn</span></td>` +
+        `<td><span class="${row.status === "Bị khóa" ? "locked" : "green"} tag">${escape(row.status)}</span></td>` +
+        `<td class="actions">${materialIcon("edit")}</td>` +
+        `</tr>`
     },
     imports: {
       rows: data.imports,
@@ -55,7 +72,21 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       fields: { date: "Ngày nhập", count: "Số dòng SP" },
       sideFilter: { selector: "#import-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đang nhập", "Đã hoàn tất"] },
       search: row => `${row.id} ${row.supplier}`,
-      render: (row, index) => `<tr data-row-index="${index}" data-row-id="${escape(row.rawId)}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.supplier)}</b><div class="sub">${row.count} mặt hàng</div></td><td class="mono">${escape(row.date)}</td><td class="money">${escape(money(row.total))}</td><td><span class="tag ${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"}">${escape(row.status)}</span></td><td class="actions">${row.status === "Đang nhập" ? `<button type="button" class="icon-btn" title="Sửa" data-edit-index="${index}">${materialIcon("edit")}</button><button type="button" class="icon-btn" title="Duyệt phiếu" data-approve-index="${index}">${materialIcon("check_circle")}</button>` : `<span class="muted">—</span>`}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}" data-row-id="${escape(row.rawId)}" style="cursor: pointer; transition: background 0.2s;">` +
+        `<td class="code w-16">${escape(row.id)}</td>` +
+        `<td><b>${escape(row.supplier)}</b><div class="sub">${row.count} mặt hàng</div></td>` +
+        `<td class="w-32 mono">${escape(row.date)}</td>` +
+        `<td class="money">${escape(money(row.total))}</td>` +
+        `<td>` +
+        `<span class="${row.status === "Đã hoàn tất" ? "green" : "import-status-pending"} tag">${escape(row.status)}</span>` +
+        `</td>` +
+        `<td class="actions">` +
+        (row.status === "Đang nhập"
+          ? `<button type="button" class="icon-btn" title="Sửa" data-edit-index="${index}">${materialIcon("edit")}</button>` +
+          `<button type="button" class="icon-btn" title="Duyệt phiếu" data-approve-index="${index}">${materialIcon("check_circle")}</button>`
+          : `<span class="muted">—</span>`)
+          `</td>` +
+        `</tr>`
     },
     promotions: {
       rows: data.promotions,
@@ -64,7 +95,14 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       fields: { type: "Loại", period: "Thời gian" },
       sideFilter: { selector: "#promotion-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đã khóa", "Đang áp dụng"] },
       search: row => `${row.id} ${row.name}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td><span class="tag">${escape(row.type)}</span></td><td class="mono">${escape(row.period)}</td><td><span class="tag green">${escape(row.status)}</span></td><td class="actions">${rowActions()}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}" style="transition: background 0.2s;">` +
+        `<td class="code w-20">${escape(row.id)}</td>` +
+        `<td><b>${escape(row.name)}</b></td>` +
+        `<td><span class="tag">${escape(row.type)}</span></td>` +
+        `<td class="mono">${escape(row.period)}</td>` +
+        `<td><span class="tag green">${escape(row.status)}</span></td>` +
+        `<td class="actions">${rowActions()}</td>` +
+        `</tr>`
     },
     staff: {
       rows: data.staff,
@@ -73,7 +111,14 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       fields: { role: "Bộ phận", phone: "Số điện thoại" },
       sideFilter: { selector: "#staff-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Bị khóa", "Đang hoạt động"] },
       search: row => `${row.id} ${row.name} ${row.role}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td><span class="tag blue">${escape(row.role)}</span></td><td class="mono">${escape(row.phone)}</td><td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}">
+      <td class="code">${escape(row.id)}</td>
+      <td><b>${escape(row.name)}</b></td>
+      <td><span class="tag blue">${escape(row.role)}</span></td>
+      <td class="mono">${escape(row.phone)}</td>
+      <td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td>
+      <td class="actions">${actionCell(row, index)}</td>
+      </tr>`
     },
     accounts: {
       rows: data.accounts,
@@ -82,7 +127,13 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       fields: { email: "Email", role: "Vai trò" },
       sideFilter: { selector: "#account-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Bị khóa", "Đang hoạt động"] },
       search: row => `${row.username} ${row.name} ${row.email}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td><b>${escape(row.username)}</b></td><td>${escape(row.name)}<div class="sub">${escape(row.email)}</div></td><td><span class="tag">${escape(row.role)}</span></td><td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}" style="transition: background 0.2s;">` +
+        `<td><b>${escape(row.username)}</b></td>` +
+        `<td>${escape(row.name)}<div class="sub">${escape(row.email)}</div></td>` +
+        `<td><span class="tag">${escape(row.role)}</span></td>` +
+        `<td><span class="${row.trangThai === 0 ? "locked" : "green"} tag">${escape(row.status)}</span></td>` +
+        `<td class="actions">${materialIcon("edit")}</td>` +
+        `</tr>`
     },
     styles: {
       rows: data.styles,
@@ -91,7 +142,12 @@ export async function initRemoteTable(type, query, onQueryChange, loadData, opti
       fields: { category: "Loại sản phẩm" },
       sideFilter: { selector: "#style-filter", getValue: row => row.status, allLabel: "Tất cả trạng thái", options: ["Đã khóa", "Đang sử dụng"] },
       search: row => `${row.id} ${row.name} ${row.category}`,
-      render: (row, index) => `<tr data-row-index="${index}"><td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td><td>${escape(row.category)}</td><td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td><td class="actions">${actionCell(row, index)}</td></tr>`
+      render: (row, index) => `<tr data-row-index="${index}">
+      <td class="code">${escape(row.id)}</td><td><b>${escape(row.name)}</b></td>
+      <td>${escape(row.category)}</td>
+      <td><span class="tag ${row.trangThai === 0 ? "locked" : "green"}">${escape(row.status)}</span></td>
+      <td class="actions">${actionCell(row, index)}</td>
+      </tr>`
     }
   }[type];
   if (!config) return;

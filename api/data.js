@@ -11,17 +11,20 @@ const tables = [
 
 const allowedColumns = {
   NHACUNGCAP: "id_nhacungcap,tennhacungcap,sdt,trangthai,isdeleted,tinhthanh,phuongxa,duong",
-  LOAISP: "id_loaisp,tenloai,trangthai,isdeleted", LOAIGO: "id_mago,tengo,trangthai,isdeleted",
+  LOAISP: "id_loaisp,tenloai,trangthai,isdeleted", 
+  LOAIGO: "id_mago,tengo,trangthai,isdeleted",
   KIEUDANG: "id_kieudang,tenkieudang,id_loaisp,trangthai,isdeleted",
   CHUONGTRINHKHUYENMAI: "id_mactkm,tenctkm,ngaybd,ngaykt,ghichu,trangthai,isdeleted",
-  NHANVIEN: "cccd,hoten,sdt,email,vaitro", KHACHHANG: "id_khachhang,hoten,sdt,email",
+  NHANVIEN: "cccd,hoten,sdt,email,vaitro", 
+  KHACHHANG: "id_khachhang,hoten,sdt,email",
   DIACHIGIAOHANG: "id_diachi,id_khachhang,tinhthanh,phuongxa,duong,macdinh",
   SANPHAM: "id_sanpham,tensanpham,id_kieudang,id_mago,dongia,soluong,trangthai,isdeleted,mota,hinhanh",
   PHIEUNHAP: "id_phieunhap,ngaynhap,trangthai,tongtien,id_nhacungcap",
   CHITIETPHIEUNHAP: "id_phieunhap,id_sanpham,soluong,dongia,thanhtien",
   CHITIETHOADON: "id_hoadon,id_sanpham,soluong,dongia,thanhtien",
   HOADON: "id_hoadon,id_khachhang,cccd_nhanvien,ngaydat,ngaygiao,id_diachigiaohang,tongtien,thanhtien,trangthai,id_mactkm,id_voucher",
-  KMTHEOSANPHAM: "id_mactkm,id_sanpham,phantram,trangthai", KMTHEOHD: "id_km_hd,id_mactkm,muctienkm,phantram,trangthai",
+  KMTHEOSANPHAM: "id_mactkm,id_sanpham,phantram,trangthai", 
+  KMTHEOHD: "id_km_hd,id_mactkm,muctienkm,phantram,trangthai",
   KMTHEOVOUCHER: "id_voucher,id_mactkm,phantram,soluong,soluonghientai,trangthai",
   DANGNHAP: "tendangnhap,matkhau,loaitaikhoan,id_khachhang,cccd_nhanvien,trangthai"
 };
