@@ -14,8 +14,7 @@ export async function getOrders() {
       const employee = staff.find(entry =>
         String(field(entry, "cccd")) === String(field(item, "cccd_nhanVien"))
       );
-      const statusText =
-        trangThai === 0 ? "Đã hủy" : trangThai === 2 ? "Đã hoàn thành" : "Đang duyệt";
+      const statusText = orderStatusText(trangThai);
       return [
         `HD${field(item, "id_hoaDon")}`,
         field(customer || {}, "hoTen") || "Khách hàng",
@@ -25,7 +24,7 @@ export async function getOrders() {
         statusText,
         field(item, "id_hoaDon"),
         trangThai,
-        field(employee || {}, "hoTen") || "—",
+        field(employee || {}, "hoTen") || "Chưa phân công",
         date(field(item, "ngayGiao"))
       ];
     });
@@ -56,8 +55,7 @@ export async function getOrderById(orderId) {
     String(field(entry, "id_diaChi")) === String(field(item, "id_diaChiGiaoHang"))
   );
   const trangThai = Number(field(item, "trangThai") ?? 1);
-  const statusText =
-    trangThai === 0 ? "Đã hủy" : trangThai === 2 ? "Đã hoàn thành" : "Đang duyệt";
+  const statusText = orderStatusText(trangThai);
   const programId = field(item, "id_maCTKM");
   const voucherId = field(item, "id_voucher");
   const invoicePromotion = invoicePromotions.find(entry =>
@@ -95,6 +93,10 @@ export async function getOrderById(orderId) {
   };
 }
 
+function orderStatusText(status) {
+  return ({ 0: "Đã hủy", 1: "Chờ duyệt", 2: "Đã duyệt", 3: "Hoàn thành" })[status] || "Không xác định";
+}
+
 export async function getOrderDetails(orderId) {
   const raw = await fetchTables(["CHITIETHOADON", "SANPHAM"]);
   const details = raw.CHITIETHOADON || [];
@@ -116,51 +118,104 @@ export async function getOrderDetails(orderId) {
 }
 
 export async function cancelOrder(orderId) {
-  // Get order details to restore product quantities
-  const detailRaw = await fetchTables(["CHITIETHOADON", "SANPHAM"]);
-  const details = detailRaw.CHITIETHOADON || [];
-  const products = detailRaw.SANPHAM || [];
-
-  // Restore product quantities
-  for (const detail of details) {
-    if (String(field(detail, "id_hoaDon")) === String(orderId)) {
-      const product = products.find(entry =>
-        String(field(entry, "id_sanPham")) === String(field(detail, "id_sanPham"))
-      );
-      if (product) {
-        const currentStock = Number(field(product, "soLuong") || 0);
-        const orderedQuantity = Number(field(detail, "soLuong") || 0);
-        await updateRecord("SANPHAM", { id_sanPham: field(product, "id_sanPham") }, {
-          soLuong: currentStock + orderedQuantity
-        });
-      }
-    }
-  }
-
   const raw = await fetchTables(["HOADON"]);
   const orders = raw.HOADON || [];
   const item = orders.find(entry => String(field(entry, "id_hoaDon")) === String(orderId));
   if (!item) throw new Error("Không tìm thấy hóa đơn.");
   const trangThai = Number(field(item, "trangThai") ?? 1);
-  if (trangThai !== 1) throw new Error("Chỉ được hủy hóa đơn đang duyệt.");
+  if (![1, 2].includes(trangThai)) {
+    throw new Error("Chỉ được hủy hóa đơn đang chờ duyệt hoặc đã duyệt; hóa đơn hoàn thành không thể hủy.");
+  }
 
-  await updateRecord("HOADON", { id_hoaDon: orderId }, { trangThai: 0 });
+  // Mark first with a status guard so repeated requests cannot restore stock twice.
+  const canceled = await updateRecord("HOADON", { id_hoaDon: orderId, trangThai }, { trangThai: 0 });
+  if (!Array.isArray(canceled) || canceled.length === 0) {
+    throw new Error("Hóa đơn đã được cập nhật. Tải lại danh sách rồi thử lại.");
+  }
 
   invalidate("orders");
   invalidate("customers");
-  invalidate("products");
+  try {
+    const detailRaw = await fetchTables(["CHITIETHOADON", "SANPHAM"]);
+    const details = detailRaw.CHITIETHOADON || [];
+    const products = detailRaw.SANPHAM || [];
+    const quantitiesByProduct = new Map();
+    for (const detail of details.filter(entry => String(field(entry, "id_hoaDon")) === String(orderId))) {
+      const productId = String(field(detail, "id_sanPham"));
+      quantitiesByProduct.set(productId, (quantitiesByProduct.get(productId) || 0) + Number(field(detail, "soLuong") || 0));
+    }
+    for (const [productId, orderedQuantity] of quantitiesByProduct) {
+      const product = products.find(entry => String(field(entry, "id_sanPham")) === productId);
+      if (!product) continue;
+      const currentStock = Number(field(product, "soLuong") || 0);
+      await updateRecord("SANPHAM", { id_sanPham: field(product, "id_sanPham") }, {
+        soLuong: currentStock + orderedQuantity
+      });
+    }
+  } catch (error) {
+    throw new Error(`Hóa đơn đã được hủy nhưng có lỗi khi hoàn kho: ${error.message}`);
+  } finally {
+    invalidate("orders");
+    invalidate("customers");
+    invalidate("products");
+  }
 }
 
-export async function approveOrder(orderId) {
+export async function approveOrder(orderId, employeeId) {
+  if (employeeId === null || employeeId === undefined || String(employeeId).trim() === "") {
+    throw new Error("Không xác định được nhân viên đang đăng nhập.");
+  }
   const raw = await fetchTables(["HOADON"]);
   const orders = raw.HOADON || [];
   const item = orders.find(entry => String(field(entry, "id_hoaDon")) === String(orderId));
   if (!item) throw new Error("Không tìm thấy hóa đơn.");
   const trangThai = Number(field(item, "trangThai") ?? 1);
-  if (trangThai !== 1) throw new Error("Chỉ được duyệt hóa đơn đang duyệt.");
+  if (trangThai !== 1) throw new Error("Chỉ được duyệt hóa đơn đang chờ duyệt.");
 
-  await updateRecord("HOADON", { id_hoaDon: orderId }, { trangThai: 2 });
+  const updated = await updateRecord("HOADON", { id_hoaDon: orderId, trangThai: 1 }, {
+    trangThai: 2,
+    cccd_nhanVien: employeeId
+  });
+  if (!Array.isArray(updated) || updated.length === 0) {
+    throw new Error("Hóa đơn đã được cập nhật. Tải lại danh sách rồi thử lại.");
+  }
 
+  invalidate("orders");
+  invalidate("customers");
+  return true;
+}
+
+export async function updateOrderDeliveryDate(orderId, deliveryDate) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(deliveryDate || ""))) {
+    throw new Error("Vui lòng chọn ngày giao hợp lệ.");
+  }
+  const [year, month, day] = deliveryDate.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== deliveryDate) {
+    throw new Error("Ngày giao không hợp lệ.");
+  }
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+  if (deliveryDate < today) {
+    throw new Error("Ngày giao phải từ hôm nay trở đi.");
+  }
+  const raw = await fetchTables(["HOADON"]);
+  const item = (raw.HOADON || []).find(entry => String(field(entry, "id_hoaDon")) === String(orderId));
+  if (!item) throw new Error("Không tìm thấy hóa đơn.");
+  if (Number(field(item, "trangThai") ?? 1) !== 2) {
+    throw new Error("Chỉ có thể cập nhật ngày giao cho hóa đơn đã duyệt.");
+  }
+  const updated = await updateRecord("HOADON", { id_hoaDon: orderId, trangThai: 2 }, {
+    ngayGiao: deliveryDate,
+    trangThai: 3
+  });
+  if (!Array.isArray(updated) || updated.length === 0) {
+    throw new Error("Hóa đơn đã được cập nhật. Tải lại danh sách rồi thử lại.");
+  }
   invalidate("orders");
   invalidate("customers");
   return true;

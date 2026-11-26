@@ -2687,6 +2687,10 @@ body,
 .master-detail.promotions-layout .detail-panel {
     overflow: hidden;
 }
+.master-detail.orders-layout .detail-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
 .master-detail.inventory-layout .master-table,
 .master-detail.orders-layout .master-table,
 .master-detail.promotions-layout .master-table,
@@ -2840,6 +2844,55 @@ body,
 }
 .detail-total .discount {
     color: #43805e;
+}
+.order-detail-heading {
+    flex: 0 0 auto;
+    padding: 14px 8px 12px;
+    border-bottom: 1px solid #e4ded5;
+}
+.order-detail-heading > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.order-detail-heading h2 {
+    margin: 0;
+    color: #19385e;
+    font-size: 16px;
+}
+.order-detail-heading p {
+    margin: 5px 0 0;
+    color: #74665b;
+    font-size: 11px;
+}
+.order-delivery-form {
+    display: grid;
+    grid-template-columns: auto minmax(120px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    padding: 12px 8px;
+    border-top: 1px solid #e4ded5;
+}
+.order-delivery-form label {
+    color: #74665b;
+    font-size: 11px;
+    font-weight: 600;
+}
+.order-delivery-form small {
+    grid-column: 1 / -1;
+    color: #718198;
+    font-size: 10px;
+}
+@media(max-width:1100px) {
+    .order-delivery-form {
+        grid-template-columns: 1fr;
+    }
+    .order-delivery-form small {
+        grid-column: auto;
+    }
 }
 @media(max-width:900px) {
     .master-detail.inventory-layout,
